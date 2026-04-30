@@ -1,0 +1,32 @@
+---
+// Full-viewport painterly oil-painting loop (PER-161 → PER-162).
+// Cycles Day → Midpoint → Evening → Night → Dawn → Day every 18.4s.
+---
+
+<video
+  class="bg-loop"
+  autoplay
+  muted
+  loop
+  playsinline
+  preload="auto"
+  poster="/bg/bg-poster.jpg"
+  aria-hidden="true"
+>
+  <source src="/bg/bg-loop-720p.webm" type="video/webm" media="(max-width: 768px)" />
+  <source src="/bg/bg-loop-720p.mp4" type="video/mp4" media="(max-width: 768px)" />
+  <source src="/bg/bg-loop-1080p.webm" type="video/webm" />
+  <source src="/bg/bg-loop-1080p.mp4" type="video/mp4" />
+</video>
+
+<style>
+  .bg-loop {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    object-fit: cover;
+    z-index: -1;
+    pointer-events: none;
+  }
+</style>
