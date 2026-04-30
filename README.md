@@ -2,21 +2,44 @@
 
 Personal website source. Production live at https://eawanders.com.
 
+## Stack
+
+- [Astro](https://astro.build) static site generator
+- TypeScript (strict)
+- pnpm
+- Vanilla CSS (no framework — design tokens land in M2)
+- Self-hosted on Vercel
+
+## Local development
+
+Requires Node `>=22.12.0` (see `.nvmrc`) and pnpm.
+
+```bash
+pnpm install
+pnpm dev          # http://localhost:4321
+pnpm build        # static output to ./dist
+pnpm preview      # serve ./dist locally
+pnpm format       # write Prettier formatting
+pnpm format:check # CI-friendly check
+```
+
 ## Deployment
 
-| Branch       | Serves                              | Hosted by      | Notes                                             |
-| ------------ | ----------------------------------- | -------------- | ------------------------------------------------- |
-| `main`       | https://eawanders.com (production)  | Vercel         | Project: `eawanders-projects/eawanders-github-io` |
-| `gh-pages`   | https://eawanders.github.io         | GitHub Pages   | Static redirect to https://eawanders.com          |
+| Branch     | Serves                             | Hosted by    | Notes                                             |
+| ---------- | ---------------------------------- | ------------ | ------------------------------------------------- |
+| `main`     | https://eawanders.com (production) | Vercel       | Project: `eawanders-projects/eawanders-github-io` |
+| `gh-pages` | https://eawanders.github.io        | GitHub Pages | Static redirect to https://eawanders.com          |
+
+Vercel auto-deploys on push to `main` and creates preview deployments for every PR.
 
 ## DNS
 
 Domain `eawanders.com` registered and DNS-managed via Cloudflare.
 
-| Type  | Name              | Value                  | Mode      |
-| ----- | ----------------- | ---------------------- | --------- |
-| CNAME | eawanders.com     | cname.vercel-dns.com   | DNS-only  |
-| CNAME | www.eawanders.com | cname.vercel-dns.com   | DNS-only  |
+| Type  | Name              | Value                | Mode     |
+| ----- | ----------------- | -------------------- | -------- |
+| CNAME | eawanders.com     | cname.vercel-dns.com | DNS-only |
+| CNAME | www.eawanders.com | cname.vercel-dns.com | DNS-only |
 
 Cloudflare proxy is **disabled** (DNS-only) so Vercel issues its own
 Let's Encrypt certificates end-to-end. Don't enable proxy without
@@ -27,5 +50,4 @@ Cloudflare zone ID: `ca573780900333e057915d385d2d8314`.
 ## Project tracking
 
 Linear project: [Personal Website](https://linear.app/eawanders/project/personal-website-5a41dd05d0c5)
-under the `personal` team (PER prefix). Build-out is tracked across
-milestones M1–M6.
+under the `personal` team (PER prefix). Build-out is tracked across milestones M1–M6.
