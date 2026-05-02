@@ -1,10 +1,12 @@
 ---
 // Full-viewport painterly oil-painting loop (PER-161 → PER-162).
 // Cycles Day → Midpoint → Evening → Night → Dawn → Day every 18.4s.
+// Reduced-motion fallback (PER-163): static Day-state poster shown instead of the loop
+// when the user has `prefers-reduced-motion: reduce`. Both elements are decorative.
 ---
 
 <video
-  class="bg-loop"
+  class="bg-loop bg-loop--video"
   autoplay
   muted
   loop
@@ -19,14 +21,43 @@
   <source src="/bg/bg-loop-1080p.mp4" type="video/mp4" />
 </video>
 
+<picture class="bg-loop bg-loop--poster" aria-hidden="true">
+  <source srcset="/bg/bg-poster.webp" type="image/webp" />
+  <img src="/bg/bg-poster.jpg" alt="" />
+</picture>
+
 <style>
   .bg-loop {
     position: fixed;
     inset: 0;
     width: 100vw;
     height: 100vh;
-    object-fit: cover;
     z-index: -1;
     pointer-events: none;
+  }
+
+  .bg-loop--video {
+    object-fit: cover;
+  }
+
+  .bg-loop--poster {
+    display: none;
+  }
+
+  .bg-loop--poster img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bg-loop--video {
+      display: none;
+    }
+
+    .bg-loop--poster {
+      display: block;
+    }
   }
 </style>
