@@ -1,0 +1,30 @@
+/*
+ * Self-hosted font faces (PER-133).
+ *
+ * Headings — Caslon Old Face Regular. Sourced from the Simparlia project
+ * (src/fonts/CaslonOldFace-Regular.otf), converted to WOFF2 via fontTools.
+ * Only the Regular cut is available; bold/italic emphasis should be
+ * achieved with --color-accent-strong tone or layout, NOT font-synthesis,
+ * since synthesised faux-bold/italic on Caslon looks coarse.
+ *
+ * Body — Geist Mono (Vercel, OFL). Variable WOFF2 covers 100–900.
+ *
+ * No third-party CDN. All files live in /public/fonts/.
+ * font-display: swap so text paints in fallback while WOFF2 loads.
+ */
+
+@font-face {
+  font-family: 'Caslon Old Face';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/CaslonOldFace-Regular.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Geist Mono';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/GeistMono-Variable.woff2') format('woff2-variations');
+}
