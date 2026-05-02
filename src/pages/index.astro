@@ -1,5 +1,7 @@
 ---
 import BackgroundLoop from '../components/BackgroundLoop.astro';
+import '../styles/fonts.css';
+import '../styles/tokens.css';
 
 const pageTitle = 'Edward Anders';
 ---
@@ -11,6 +13,20 @@ const pageTitle = 'Edward Anders';
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="generator" content={Astro.generator} />
+    <link
+      rel="preload"
+      href="/fonts/CaslonOldFace-Regular.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="/fonts/GeistMono-Variable.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
     <title>{pageTitle}</title>
     <style>
       html,
@@ -22,7 +38,7 @@ const pageTitle = 'Edward Anders';
         display: flex;
         align-items: center;
         justify-content: center;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+        font-family: var(--font-body);
         color: #f5ecd9;
         background: #1a1410;
       }
@@ -32,15 +48,18 @@ const pageTitle = 'Edward Anders';
         text-shadow: 0 1px 12px rgba(0, 0, 0, 0.55);
       }
       h1 {
-        font-weight: 500;
-        font-size: 1.75rem;
+        font-family: var(--font-display);
+        font-weight: 400;
+        font-size: var(--font-size-h1);
+        line-height: var(--line-height-display);
+        letter-spacing: var(--letter-spacing-display);
         margin: 0 0 0.5rem;
-        letter-spacing: 0.02em;
       }
       p {
         color: #e8dcc4;
         margin: 0;
-        font-size: 1rem;
+        font-size: var(--font-size-body);
+        line-height: var(--line-height-body);
         opacity: 0.9;
       }
     </style>
