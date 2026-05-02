@@ -1,0 +1,39 @@
+/*
+ * Site colour tokens (PER-134).
+ *
+ * Single-theme (light only). The Night state appears only in the
+ * homepage video loop, never in CSS tokens — the homepage is its
+ * own self-contained world.
+ *
+ * Source palette — Day / Spring Garden (locked in PER-161):
+ *   #E8DCC4 cream stone
+ *   #B5C9D8 sky
+ *   #95B984 spring green
+ *   #C7A8D4 light wisteria
+ *   #8B6FA8 deep wisteria
+ *
+ * Each token is annotated with its source colour + intended role.
+ * WCAG AA contrast verified for every text-on-surface combo (see
+ * PER-134 PR body for the contrast table).
+ */
+
+:root {
+  /* Surfaces — derived from #E8DCC4 cream stone */
+  --color-bg: #f2e9d2; /* lifted cream stone — page background */
+  --color-surface: #f8efd8; /* warmer cream — cards, raised surfaces (slightly warmer than --color-bg) */
+
+  /* Text — deep wisteria-shadow family (#8B6FA8 darkened); not black, ties to homepage video */
+  --color-text-primary: #3a2d4f; /* deep wisteria-shadow — body text, 10.5:1 on --color-bg */
+  --color-text-secondary: #5f5072; /* muted wisteria-grey — captions, meta, 5.7:1 on --color-bg */
+
+  /* Border — sage tint of #95B984 spring green, low-contrast */
+  --color-border: #d4ddc8; /* soft sage — dividers, card outlines (non-text, no AA requirement) */
+
+  /* Accent — deeper wisteria family (#8B6FA8) */
+  --color-accent: #8b6fa8; /* deep wisteria — focus rings, button surfaces, decorative use (3.2:1 vs --color-bg passes AA non-text) */
+  --color-accent-strong: #6f5689; /* darker wisteria — body-text links, 4.6:1 on --color-bg (AA body) */
+  --color-accent-hover: #5e4677; /* darker still — link hover state, 6.1:1 on --color-bg */
+
+  /* Text on accent surfaces — warm cream on wisteria */
+  --color-text-on-accent: #f8efd8; /* cream on --color-accent, 3.4:1 (AA Large only — keep button labels ≥18pt or bold ≥14pt) */
+}
