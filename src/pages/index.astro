@@ -36,39 +36,41 @@ const pageTitle = 'Edward Anders';
         margin: 0;
       }
       body {
-        display: flex;
-        align-items: center;
-        justify-content: center;
         font-family: var(--font-body);
-        color: #f5ecd9;
         background: #f5f2ec;
       }
-      main {
-        text-align: center;
-        padding: 1.5rem 2rem;
-        text-shadow: 0 1px 12px rgba(0, 0, 0, 0.55);
+      .hero {
+        position: fixed;
+        top: 50%;
+        left: 2rem;
+        transform: translateY(-50%);
+        max-width: 32rem;
+        z-index: 10;
+        color: #002d1a;
       }
-      h1 {
+      .hero h1 {
         font-family: var(--font-display);
         font-weight: 400;
-        font-size: var(--font-size-h1);
+        font-size: clamp(2.5rem, 6vw, 5rem);
         line-height: var(--line-height-display);
         letter-spacing: var(--letter-spacing-display);
-        margin: 0 0 0.5rem;
+        margin: 0 0 1rem;
       }
-      p {
-        color: #e8dcc4;
+      .hero p {
+        font-family: var(--font-body);
+        font-size: 1rem;
+        font-weight: 300;
+        line-height: 1.5;
         margin: 0;
-        font-size: var(--font-size-body);
-        line-height: var(--line-height-body);
-        opacity: 0.9;
       }
     </style>
   </head>
   <body>
     <BackgroundLoop />
     <Nav />
-    <main>
+    <main class="hero">
+      <h1>{pageTitle}</h1>
+      <p>Researching the political and societal impacts of AI. Data science PhD at the University of Oxford. Building the infrastructure for synthetic agents.</p>
     </main>
   </body>
 </html>
