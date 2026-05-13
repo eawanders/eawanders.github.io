@@ -1,8 +1,10 @@
 ---
-// Full-viewport painterly oil-painting loop (PER-161 → PER-162).
+// Painterly oil-painting loop, framed as a canvas (PER-161 → PER-162 → PER-167).
 // Cycles Day → Midpoint → Evening → Night → Dawn → Day every 18.4s.
 // Reduced-motion fallback (PER-163): static Day-state poster shown instead of the loop
 // when the user has `prefers-reduced-motion: reduce`. Both elements are decorative.
+// Inset from viewport with a soft gradient feather (PER-167) so the loop reads as a
+// painting on canvas rather than a full-bleed video.
 ---
 
 <video
@@ -28,12 +30,53 @@
 
 <style>
   .bg-loop {
+    --canvas-feather: 12%;
+
     position: fixed;
-    inset: 0;
-    width: 100vw;
-    height: 100vh;
+    inset: 5vh 5vw;
     z-index: -1;
     pointer-events: none;
+
+    /* Soft gradient feather on all four edges — fades into page canvas */
+    -webkit-mask-image:
+      linear-gradient(
+        to right,
+        transparent 0%,
+        black var(--canvas-feather),
+        black calc(100% - var(--canvas-feather)),
+        transparent 100%
+      ),
+      linear-gradient(
+        to bottom,
+        transparent 0%,
+        black var(--canvas-feather),
+        black calc(100% - var(--canvas-feather)),
+        transparent 100%
+      );
+    -webkit-mask-composite: source-in;
+    mask-image:
+      linear-gradient(
+        to right,
+        transparent 0%,
+        black var(--canvas-feather),
+        black calc(100% - var(--canvas-feather)),
+        transparent 100%
+      ),
+      linear-gradient(
+        to bottom,
+        transparent 0%,
+        black var(--canvas-feather),
+        black calc(100% - var(--canvas-feather)),
+        transparent 100%
+      );
+    mask-composite: intersect;
+  }
+
+  @media (max-width: 768px) {
+    .bg-loop {
+      inset: 16px;
+      --canvas-feather: 8%;
+    }
   }
 
   .bg-loop--video {
