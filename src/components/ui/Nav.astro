@@ -1,28 +1,19 @@
 ---
-// Translucent glass navigation pill (PER-164).
-// Apple Liquid Glass material — heavy frost + directional light + edge highlight + SVG refraction.
-// Tuned to match the Figma "Glass" preset: Light -45° / 80%, Refraction 80, Depth 20, Frost 50.
-//
-// Honours prefers-reduced-transparency and prefers-reduced-motion.
+// Primary navigation (PER-164).
+// Plain text labels, top-left of the viewport, deep dark British Racing Green
+// on the warm canvas. Lowercase Geist Mono Light per the Figma design.
 
 const items = [
-  { href: '/', label: 'Edward' },
-  { href: '/about', label: 'About' },
-  { href: '/research', label: 'Research' },
-  { href: '/projects', label: 'Projects' },
+  { href: '/', label: 'edward' },
+  { href: '/about', label: 'about' },
+  { href: '/research', label: 'research' },
+  { href: '/projects', label: 'projects' },
 ];
 
 const pathname = Astro.url.pathname.replace(/\/$/, '') || '/';
 ---
 
-<svg class="nav-defs" aria-hidden="true" focusable="false">
-  <filter id="nav-glass-refract">
-    <feTurbulence type="fractalNoise" baseFrequency="0.008" numOctaves="2" seed="3" />
-    <feDisplacementMap in="SourceGraphic" scale="8" />
-  </filter>
-</svg>
-
-<nav class="nav-pill" aria-label="Primary">
+<nav class="nav" aria-label="Primary">
   <ul>
     {
       items.map(({ href, label }) => {
@@ -40,107 +31,51 @@ const pathname = Astro.url.pathname.replace(/\/$/, '') || '/';
 </nav>
 
 <style>
-  .nav-defs {
-    position: absolute;
-    width: 0;
-    height: 0;
-    overflow: hidden;
-    pointer-events: none;
-  }
-
-  .nav-pill {
+  .nav {
     position: fixed;
     top: 1.5rem;
-    left: 50%;
-    transform: translateX(-50%);
+    left: 1.5rem;
     z-index: 50;
-    border-radius: 100px;
-    padding: 1.5rem 3rem;
-
-    /* Liquid Glass material */
-    background: rgba(255, 255, 255, 0.12);
-    backdrop-filter: blur(24px) saturate(180%) url(#nav-glass-refract);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
-
-    /* Depth = 20: layered inner highlights + soft outer shadow */
-    border: 1px solid rgba(255, 255, 255, 0.32);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.5),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.05),
-      0 8px 24px rgba(0, 0, 0, 0.1);
   }
 
-  /* Light = -45° / 80%: directional gloss from upper-left */
-  .nav-pill::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    background: linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.32) 0%,
-      rgba(255, 255, 255, 0.06) 35%,
-      rgba(255, 255, 255, 0) 60%
-    );
-    pointer-events: none;
-  }
-
-  .nav-pill ul {
-    position: relative;
+  .nav ul {
     display: flex;
     align-items: center;
-    gap: 3rem;
+    gap: 3rem; /* 48px — matches Figma */
     list-style: none;
     margin: 0;
     padding: 0;
-    z-index: 1;
   }
 
-  .nav-pill a {
+  .nav a {
     display: inline-block;
     font-family: var(--font-body);
-    font-size: 1.25rem; /* 20px */
-    font-weight: 500;
-    letter-spacing: 0.02em;
-    color: #ffffff;
-    text-decoration: none;
+    font-size: 1rem; /* 20px — matches Figma */
+    font-weight: 300; /* Geist Mono Light — matches Figma */
     line-height: 1;
+    color: #002d1a; /* deep dark British Racing Green */
+    text-decoration: none;
     white-space: nowrap;
-    transition:
-      color 200ms ease,
-      font-weight 200ms ease;
+    transition: opacity 180ms ease;
   }
 
-  .nav-pill a:hover {
-    color: rgba(255, 255, 255, 0.75);
+  .nav a:hover {
+    opacity: 0.7;
   }
 
-  .nav-pill a:focus-visible {
-    outline: 2px solid var(--color-accent);
+  .nav a:focus-visible {
+    outline: 2px solid currentColor;
     outline-offset: 4px;
     border-radius: 2px;
   }
 
-  .nav-pill a[aria-current='page'] {
-    font-weight: 700;
-  }
-
-  /* Reduced transparency: solid wisteria fallback, no blur or refraction */
-  @media (prefers-reduced-transparency: reduce) {
-    .nav-pill {
-      background: rgba(58, 45, 79, 0.85);
-      backdrop-filter: none;
-      -webkit-backdrop-filter: none;
-      border-color: rgba(255, 255, 255, 0.2);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
-    .nav-pill::before {
-      display: none;
-    }
+  /* Active page — slight weight bump, no layout shift in monospace */
+  .nav a[aria-current='page'] {
+    font-weight: 500;
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .nav-pill a {
+    .nav a {
       transition: none;
     }
   }
