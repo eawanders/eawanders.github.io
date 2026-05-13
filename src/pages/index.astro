@@ -30,23 +30,54 @@ const pageTitle = 'Edward Anders';
     />
     <title>{pageTitle}</title>
     <style>
-      html,
-      body {
-        height: 100%;
-        margin: 0;
+      html {
+        scroll-behavior: smooth;
+        scroll-padding-top: 4rem;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
       }
       body {
+        margin: 0;
         font-family: var(--font-body);
         background: #f5f2ec;
+        color: #002d1a;
       }
+      .section {
+        position: relative;
+        min-height: 100vh;
+        padding: 6rem 2rem 4rem;
+        box-sizing: border-box;
+      }
+      .section h2 {
+        font-family: var(--font-display);
+        font-weight: 400;
+        font-size: clamp(2rem, 4vw, 3rem);
+        line-height: var(--line-height-display);
+        letter-spacing: var(--letter-spacing-display);
+        margin: 0 0 1.5rem;
+      }
+      .section p {
+        font-family: var(--font-body);
+        font-size: 1rem;
+        font-weight: 300;
+        line-height: 1.6;
+        max-width: 32rem;
+        margin: 0 0 1rem;
+      }
+      /*
+       * Hero section: title sits at left-middle of the first viewport so it
+       * acts as the splash, then scrolls naturally out of view as the user
+       * moves to the next section.
+       */
       .hero {
-        position: fixed;
+        position: absolute;
         top: 50%;
         left: 2rem;
         transform: translateY(-50%);
         max-width: 32rem;
-        z-index: 10;
-        color: #002d1a;
       }
       .hero h1 {
         font-family: var(--font-display);
@@ -68,9 +99,28 @@ const pageTitle = 'Edward Anders';
   <body>
     <BackgroundLoop />
     <Nav />
-    <main class="hero">
-      <h1>{pageTitle}</h1>
-      <p>Researching the political and societal impacts of AI. Data science PhD at the University of Oxford. Building the infrastructure for synthetic agents.</p>
+    <main>
+      <section id="top" class="section section-hero">
+        <div class="hero">
+          <h1>{pageTitle}</h1>
+          <p>Researching the political and societal impacts of AI. Data science PhD at the University of Oxford. Building the infrastructure for synthetic agents.</p>
+        </div>
+      </section>
+
+      <section id="about" class="section">
+        <h2>About</h2>
+        <p>Placeholder content for the about section. Real bio coming soon.</p>
+      </section>
+
+      <section id="research" class="section">
+        <h2>Research</h2>
+        <p>Placeholder content for the research section. Publications and projects coming soon.</p>
+      </section>
+
+      <section id="projects" class="section">
+        <h2>Projects</h2>
+        <p>Placeholder content for the projects section. Selected work coming soon.</p>
+      </section>
     </main>
   </body>
 </html>

@@ -1,34 +1,60 @@
 ---
-// Primary navigation (PER-164).
-// Plain text labels, top-left of the viewport, deep dark British Racing Green
-// on the warm canvas. Lowercase Geist Mono Light per the Figma design.
+// Primary navigation (PER-164, PER-169).
+// In-page anchor links to homepage sections. A client-side IntersectionObserver
+// updates aria-current as the user scrolls so the active section is highlighted.
 
 const items = [
-  { href: '/', label: 'edward' },
-  { href: '/about', label: 'about' },
-  { href: '/research', label: 'research' },
-  { href: '/projects', label: 'projects' },
+  { section: 'top', label: 'edward' },
+  { section: 'about', label: 'about' },
+  { section: 'research', label: 'research' },
+  { section: 'projects', label: 'projects' },
 ];
-
-const pathname = Astro.url.pathname.replace(/\/$/, '') || '/';
 ---
 
 <nav class="nav" aria-label="Primary">
   <ul>
     {
-      items.map(({ href, label }) => {
-        const isActive = href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(href + '/');
-        return (
-          <li>
-            <a href={href} aria-current={isActive ? 'page' : undefined}>
-              {label}
-            </a>
-          </li>
-        );
-      })
+      items.map(({ section, label }) => (
+        <li>
+          <a href={`#${section}`} data-section={section}>
+            {label}
+          </a>
+        </li>
+      ))
     }
   </ul>
 </nav>
+
+<script>
+  // Scroll-spy: mark the nav item that matches the section currently in
+  // the middle of the viewport with aria-current="page".
+  const navLinks = document.querySelectorAll('.nav a[data-section]');
+  const sections = document.querySelectorAll('section[id]');
+
+  if ('IntersectionObserver' in window && navLinks.length && sections.length) {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const id = entry.target.id;
+            navLinks.forEach((link) => {
+              if (link.getAttribute('data-section') === id) {
+                link.setAttribute('aria-current', 'page');
+              } else {
+                link.removeAttribute('aria-current');
+              }
+            });
+          }
+        });
+      },
+      // The "active band" is the middle 20% of the viewport — a section
+      // becomes active when its visible middle crosses this band.
+      { rootMargin: '-40% 0px -40% 0px' }
+    );
+
+    sections.forEach((section) => observer.observe(section));
+  }
+</script>
 
 <style>
   .nav {
@@ -50,8 +76,8 @@ const pathname = Astro.url.pathname.replace(/\/$/, '') || '/';
   .nav a {
     display: inline-block;
     font-family: var(--font-body);
-    font-size: 1rem; /* 20px — matches Figma */
-    font-weight: 300; /* Geist Mono Light — matches Figma */
+    font-size: 1rem;
+    font-weight: 300; /* Geist Mono Light */
     line-height: 1;
     color: #002d1a; /* deep dark British Racing Green */
     text-decoration: none;
@@ -69,7 +95,7 @@ const pathname = Astro.url.pathname.replace(/\/$/, '') || '/';
     border-radius: 2px;
   }
 
-  /* Active page — slight weight bump, no layout shift in monospace */
+  /* Active section — slight weight bump, no layout shift in monospace */
   .nav a[aria-current='page'] {
     font-weight: 500;
   }
