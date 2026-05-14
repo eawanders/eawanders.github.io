@@ -164,9 +164,14 @@
   .bg-loop--video {
     object-fit: cover;
     object-position: var(--bg-offset-x) var(--bg-offset-y);
-    /* Crop the very edge of the video — hides 1px dark rows from encoding */
-    transform: scale(1.03);
-    transform-origin: center;
+    /*
+     * Crop the top and bottom edges of the video to hide ~1px dark rows
+     * baked into the source encoding. Uses clip-path rather than transform:
+     * scale() because a scaled `position: fixed` masked element produces a
+     * 1px AA artefact at its CSS box edge — visible as a faint vertical
+     * line at --inset-left. clip-path has no such compositor side-effect.
+     */
+    clip-path: inset(4px 0 4px 0);
   }
 
   .bg-loop--poster {
@@ -178,9 +183,8 @@
     height: 100%;
     object-fit: cover;
     object-position: var(--bg-offset-x) var(--bg-offset-y);
-    /* Crop the very edge of the poster — keep parity with the video */
-    transform: scale(1.03);
-    transform-origin: center;
+    /* Same crop as the video so the reduced-motion fallback matches. */
+    clip-path: inset(4px 0 4px 0);
     display: block;
   }
 
