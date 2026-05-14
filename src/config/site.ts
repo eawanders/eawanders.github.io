@@ -11,8 +11,9 @@ export const site = {
     pageTitle ? `${pageTitle} — Edward Anders` : 'Edward Anders',
   defaultDescription:
     'Edward Anders — DPhil candidate in Social Data Science at the Oxford Internet Institute, researching how AI-generated content shapes affective polarisation across democracies.',
-  // PER-151 will replace this placeholder with a generated 1200×630 PNG.
-  defaultOgImage: '/og-default.png',
+  // 1200×630 JPEG (PER-151). Pastoral oil painting matching the warm
+  // newspaper aesthetic of the site backgrounds.
+  defaultOgImage: '/og-default.jpg',
   twitterHandle: '@edwardaw',
   locale: 'en_GB',
 } as const;
