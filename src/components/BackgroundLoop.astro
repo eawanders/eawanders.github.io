@@ -30,10 +30,16 @@
 
 <style>
   .bg-loop {
-    /* Inset from each viewport edge — tune independently */
-    --inset-top: 0vh;
+    /*
+     * Inset from each viewport edge — tune independently. Top and bottom
+     * use a small negative inset so the element overflows the viewport by
+     * 4px on each end; the clip-path below crops those 4px back off, hiding
+     * the dark rows baked into the video edges while keeping the visible
+     * painting flush with the viewport (no cream gap top or bottom).
+     */
+    --inset-top: -4px;
     --inset-right: 0vw;
-    --inset-bottom: 0vh;
+    --inset-bottom: -4px;
     --inset-left: 10vw;
 
     /*
