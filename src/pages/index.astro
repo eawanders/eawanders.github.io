@@ -6,20 +6,28 @@ import '../styles/tokens.css';
 
 const pageTitle = 'Edward Anders';
 
-// About-section background: placeholder uses the same painting as the hero but
-// the vignette is mirrored to the left so the two read as different scenes.
-// Critical: the box insets MUST match the hero exactly so the painting layer
-// stays in the same viewport rectangle through the cross-fade — otherwise the
-// painting visibly shifts horizontally during the transition. Only the
-// vignette centre and object-position change to mirror the reveal.
-// Swap videoBase / posterBase to the dedicated About asset once produced.
+// Per-section vignette/inset overrides. BackgroundLoop.astro's defaults now
+// describe the About section's look; the Hero overrides them back to its
+// original values. Both layers stay mounted as fixed-position siblings and
+// cross-fade via opacity on scroll.
+const heroBgStyle = [
+  // Hero box: 10vw cream rail on the left, full viewport elsewhere.
+  '--inset-left: 10vw',
+  // Hero vignette: wider ellipse, smaller opaque core — painting concentrated
+  // on the right with a long fade across the centre toward the cream rail.
+  '--vignette-size: 130% 180%',
+  '--vignette-core: 15%',
+  'opacity: 1',
+].join('; ');
+
 const aboutBgStyle = [
+  // Mirror the vignette + offset to the left so the painting reveals on the
+  // opposite side from the hero. Insets and vignette sizing come from the
+  // component defaults.
   '--vignette-cx: 0%',
   '--bg-offset-x: 0%',
   'opacity: 0',
 ].join('; ');
-
-const heroBgStyle = 'opacity: 1';
 ---
 
 <!doctype html>
@@ -131,10 +139,36 @@ const heroBgStyle = 'opacity: 1';
         z-index: 10;
         will-change: opacity;
         /*
-         * Interactive children (accordions, links) need clicks; the wheel
-         * event still bypasses pointer-events so vertical scroll continues
-         * to work over the text block.
+         * pointer-events default to none; the scroll script toggles them
+         * to `auto` when the block becomes visible. Otherwise an invisible
+         * fixed block (opacity 0) would still intercept wheel and click
+         * events over half the viewport, blocking page scroll.
          */
+        pointer-events: none;
+      }
+      /*
+       * Inner scroll only on the right (about) block — the hero block is
+       * short and never overflows, so it doesn't need to become a wheel-
+       * capturing scroll container.
+       */
+      .fixed-content--right {
+        right: 2rem;
+        padding-top: 20rem;
+        max-height: calc(100vh - 4rem);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(0, 45, 26, 0.35) transparent;
+      }
+      .fixed-content--right::-webkit-scrollbar {
+        width: 6px;
+      }
+      .fixed-content--right::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .fixed-content--right::-webkit-scrollbar-thumb {
+        background: rgba(0, 45, 26, 0.35);
+        border-radius: 3px;
       }
       /*
        * Accordion items — native <details>/<summary> with a custom chevron.
@@ -177,6 +211,23 @@ const heroBgStyle = 'opacity: 1';
         line-height: 1.55;
         opacity: 0.82;
       }
+      /* Date line inside an accordion — distinct from the description paragraph */
+      .fixed-content details .date {
+        font-weight: 500;
+        opacity: 1;
+        margin-bottom: 0.35rem;
+      }
+      /*
+       * Additional subtext inside an accordion — sits between the date and
+       * the description. Use for scholarships, honours, sub-titles, etc.
+       * Regular weight, full opacity, kept tight against the date above.
+       */
+      .fixed-content details .additional-subtext {
+        font-weight: 400;
+        opacity: 1;
+        margin-top: -0.15rem;
+        margin-bottom: 0.5rem;
+      }
       /* Inline text link — used for the CV download at the bottom of about */
       .fixed-content a {
         color: inherit;
@@ -199,9 +250,6 @@ const heroBgStyle = 'opacity: 1';
       }
       .fixed-content--left {
         left: 2rem;
-      }
-      .fixed-content--right {
-        right: 2rem;
       }
       /*
        * Hero text block — uses .fixed-content--left. Renamed-from .hero but
@@ -245,135 +293,207 @@ const heroBgStyle = 'opacity: 1';
     <div class="fixed-content fixed-content--right" data-section-content="about" style="opacity: 0">
       <h2>About</h2>
       <p>
-        Edward is a PhD student at the Oxford Internet Institute, University of Oxford. He comes
-        from a background of four years as an early-stage startup operator
+        Edward is a DPhil candidate in Social Data Science at the Oxford Internet Institute,
+        building synthetic electorates to predict political and social behaviour.
       </p>
-      <p>Optional second paragraph for context — methods, collaborators, or what's coming next.</p>
 
       <h3>Education</h3>
       <ul>
         <li>
           <details>
-            <summary>DPhil Social Data Science, Jesus College, Oxford</summary>
-            <p>Dates and short description. Advisor name, research focus, anything else worth surfacing on click.</p>
+            <summary>DPhil Social Data Science — Jesus College, Oxford</summary>
+            <p class="date">2026–</p>
+            <p class="additional-subtext">
+              Shirley Scholar</p>
+            <p>
+              <p>Oxford Internet Institute. Predicting how the</p>
+            </p>
           </details>
+          <li>
+            <details>
+              <summary
+                >MPhil Politics (Comparative Government) — St Antony's College, Oxford</summary
+              >
+              <p class="date">2024–2026</p>
+              <p>
+                Distinction expected. MPhil research paper investigates whether labelling
+                AI-generated political content mitigates or deepens affective polarisation — two
+                YouGov-fielded UK survey experiments and a formal theoretical model linking labels
+                through trust and emotion to polarisation outcomes.
+              </p>
+            </details>
+          </li>
+          <li>
+            <details>
+              <summary>BSc Economics and Politics — University of Bristol</summary>
+              <p class="date">2018–2021</p>
+              <p>
+                1st-Class Honours. Head of School's Commendation for the dissertation and final
+                year.
+              </p>
+            </details>
+          </li>
         </li>
-        <li>
-          <details>
-            <summary>MPhil Politics, St Antony's College, Oxford</summary>
-            <p>Dates and short description.</p>
-          </details>
-        </li>
-        <li>
-          <details>
-            <summary>BSc Economics and Politics, University of Bristol</summary>
-            <p>Dates and short description.</p>
-          </details>
-        </li>
-      </ul>
 
-      <h3>Selected roles</h3>
-      <ul>
-        <li>
-          <details>
-            <summary>Strategy Manager — Complyance</summary>
-            <p>Dates, scope of role, headline outcomes.</p>
-          </details>
-        </li>
-        <li>
-          <details>
-            <summary>Role — Organisation</summary>
-            <p>Dates and short description.</p>
-          </details>
-        </li>
-      </ul>
+        <h3>Selected roles</h3>
+        <ul>
+          <li>
+            <details>
+              <summary>Graduate Research Assistant — Nuffield College, Oxford</summary>
+              <p class="date">2025–</p>
+              <p>
+                Assisting Professor Rachel Bernhard on her Appearance-Based Politics book project.
+                Built PDF scraping and data-extraction pipelines in R, verified reproducibility of
+                existing analysis, and tightened the project's documentation and version control.
+              </p>
+            </details>
+          </li>
+          <li>
+            <details>
+              <summary>Research Analyst — Oxford Levant Advisory</summary>
+              <p class="date">2025–</p>
+              <p>
+                Producing data-driven reports for international clients on geopolitical and economic
+                risks in the Middle East — regulatory environments, operational constraints,
+                competitor activity, and the political and security dynamics shaping market access.
+              </p>
+            </details>
+          </li>
+          <li>
+            <details>
+              <summary>Strategy Research Manager — Securely Technology</summary>
+              <p class="date">2024–2025</p>
+              <p>
+                Employee #10 at a seed-stage AI GRC startup. Established a post-sales department
+                with the CSO and CEO. Cybersecurity research across the EU AI Act, SOC2 and ISO
+                27001. Led workshops presenting research to CISOs and CCOs of Fortune 500 companies.
+              </p>
+            </details>
+          </li>
+          <li>
+            <details>
+              <summary>Senior Founder's Associate — Quanterium Technologies</summary>
+              <p class="date">2021–2024</p>
+              <p>
+                Employee #1 at a messaging startup for emerging markets. Led geopolitical research
+                on South America, owned cross-functional projects with legal, finance, and investors
+                (including an acquisition workstream), implemented product analytics, and
+                streamlined DevOps with engineering and product.
+              </p>
+            </details>
+          </li>
+        </ul>
 
-      <p class="cv-download">
-        <a href="/edward-anders-cv.pdf" target="_blank" rel="noopener">Download full curriculum vitae</a>
-      </p>
+        <p class="cv-download">
+          <a href="/edward-anders-cv.pdf" target="_blank" rel="noopener"
+            >Download full curriculum vitae</a
+          >
+        </p>
+      </div>
+
+      <main>
+        <section id="top" class="section"></section>
+        <section id="about" class="section"></section>
+        <section id="research" class="section">
+          <h2>Research</h2>
+          <p>
+            Placeholder content for the research section. Publications and projects coming soon.
+          </p>
+        </section>
+        <section id="projects" class="section">
+          <h2>Projects</h2>
+          <p>Placeholder content for the projects section. Selected work coming soon.</p>
+        </section>
+      </main>
+
+      <script>
+        // Scroll-driven cross-fade between the hero and about background loops,
+        // and a synchronised opacity fade on the hero text (PER-144).
+        //
+        // Progress runs 0 → 1 as the user scrolls from the top of the page to
+        // the top of #about. The hero layer + hero text fade out; the about
+        // layer fades in. Reversed on scroll-up.
+        //
+        // rAF-throttled, passive listener. prefers-reduced-motion disables the
+        // effect and falls back to the initial CSS opacities (hero visible,
+        // about background hidden) so the user can still navigate via the nav.
+        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        const heroSection = document.querySelector('#top');
+        const heroText = document.querySelector('[data-section-content="top"]');
+        const aboutText = document.querySelector('[data-section-content="about"]');
+        const topLayer = document.querySelector('.bg-loop-layer[data-bg-section="top"]');
+        const aboutLayer = document.querySelector('.bg-loop-layer[data-bg-section="about"]');
+
+        if (
+          !prefersReducedMotion &&
+          heroSection &&
+          heroText &&
+          aboutText &&
+          topLayer &&
+          aboutLayer
+        ) {
+          let ticking = false;
+
+          // smoothstep ease — slow at both ends, fast through the middle.
+          const smoothstep = (t: number) => t * t * (3 - 2 * t);
+
+          // Pacing — both text and background transitions complete before the
+          // user lands at the about snap point.
+          const HERO_TEXT_FADE_END = 0.4; // hero title gone by 40% of hero scroll
+          const ABOUT_TEXT_FADE_START = 0.5; // about appears from 50%
+          const ABOUT_TEXT_FADE_END = 0.9; // about fully in by 90%
+          const BG_FADE_END = 0.75;
+
+          const update = () => {
+            const heroHeight = heroSection.getBoundingClientRect().height;
+            const progress = Math.max(0, Math.min(1, window.scrollY / Math.max(heroHeight, 1)));
+
+            // Background layers: smoothstep cross-fade, complete by 75%
+            const bgProgress = Math.min(1, progress / BG_FADE_END);
+            const bgEased = smoothstep(bgProgress);
+            (topLayer as HTMLElement).style.opacity = (1 - bgEased).toString();
+            (aboutLayer as HTMLElement).style.opacity = bgEased.toString();
+
+            // Hero text: fade out 0 → HERO_TEXT_FADE_END
+            const heroFade = Math.min(1, progress / HERO_TEXT_FADE_END);
+            const heroOpacity = 1 - smoothstep(heroFade);
+            (heroText as HTMLElement).style.opacity = heroOpacity.toString();
+
+            // About text: fade in ABOUT_TEXT_FADE_START → ABOUT_TEXT_FADE_END
+            const aboutRange = ABOUT_TEXT_FADE_END - ABOUT_TEXT_FADE_START;
+            const aboutFade = Math.max(
+              0,
+              Math.min(1, (progress - ABOUT_TEXT_FADE_START) / aboutRange),
+            );
+            const aboutOpacity = smoothstep(aboutFade);
+            (aboutText as HTMLElement).style.opacity = aboutOpacity.toString();
+
+            /*
+             * Toggle pointer-events with visibility. Fixed blocks otherwise
+             * cover half the viewport even when fully transparent, swallowing
+             * wheel + click events and blocking page scroll.
+             */
+            (heroText as HTMLElement).style.pointerEvents =
+              heroOpacity > 0.05 ? 'auto' : 'none';
+            (aboutText as HTMLElement).style.pointerEvents =
+              aboutOpacity > 0.05 ? 'auto' : 'none';
+
+            ticking = false;
+          };
+
+          const onScroll = () => {
+            if (!ticking) {
+              requestAnimationFrame(update);
+              ticking = true;
+            }
+          };
+
+          window.addEventListener('scroll', onScroll, { passive: true });
+          window.addEventListener('resize', onScroll, { passive: true });
+          update();
+        }
+      </script>
     </div>
-
-    <main>
-      <section id="top" class="section"></section>
-      <section id="about" class="section"></section>
-      <section id="research" class="section">
-        <h2>Research</h2>
-        <p>Placeholder content for the research section. Publications and projects coming soon.</p>
-      </section>
-      <section id="projects" class="section">
-        <h2>Projects</h2>
-        <p>Placeholder content for the projects section. Selected work coming soon.</p>
-      </section>
-    </main>
-
-    <script>
-      // Scroll-driven cross-fade between the hero and about background loops,
-      // and a synchronised opacity fade on the hero text (PER-144).
-      //
-      // Progress runs 0 → 1 as the user scrolls from the top of the page to
-      // the top of #about. The hero layer + hero text fade out; the about
-      // layer fades in. Reversed on scroll-up.
-      //
-      // rAF-throttled, passive listener. prefers-reduced-motion disables the
-      // effect and falls back to the initial CSS opacities (hero visible,
-      // about background hidden) so the user can still navigate via the nav.
-      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-      const heroSection = document.querySelector('#top');
-      const heroText = document.querySelector('[data-section-content="top"]');
-      const aboutText = document.querySelector('[data-section-content="about"]');
-      const topLayer = document.querySelector('.bg-loop-layer[data-bg-section="top"]');
-      const aboutLayer = document.querySelector('.bg-loop-layer[data-bg-section="about"]');
-
-      if (!prefersReducedMotion && heroSection && heroText && aboutText && topLayer && aboutLayer) {
-        let ticking = false;
-
-        // smoothstep ease — slow at both ends, fast through the middle.
-        const smoothstep = (t: number) => t * t * (3 - 2 * t);
-
-        // Pacing — both text and background transitions complete before the
-        // user lands at the about snap point.
-        const HERO_TEXT_FADE_END = 0.4; // hero title gone by 40% of hero scroll
-        const ABOUT_TEXT_FADE_START = 0.5; // about appears from 50%
-        const ABOUT_TEXT_FADE_END = 0.9; // about fully in by 90%
-        const BG_FADE_END = 0.75;
-
-        const update = () => {
-          const heroHeight = heroSection.getBoundingClientRect().height;
-          const progress = Math.max(0, Math.min(1, window.scrollY / Math.max(heroHeight, 1)));
-
-          // Background layers: smoothstep cross-fade, complete by 75%
-          const bgProgress = Math.min(1, progress / BG_FADE_END);
-          const bgEased = smoothstep(bgProgress);
-          (topLayer as HTMLElement).style.opacity = (1 - bgEased).toString();
-          (aboutLayer as HTMLElement).style.opacity = bgEased.toString();
-
-          // Hero text: fade out 0 → HERO_TEXT_FADE_END
-          const heroFade = Math.min(1, progress / HERO_TEXT_FADE_END);
-          (heroText as HTMLElement).style.opacity = (1 - smoothstep(heroFade)).toString();
-
-          // About text: fade in ABOUT_TEXT_FADE_START → ABOUT_TEXT_FADE_END
-          const aboutRange = ABOUT_TEXT_FADE_END - ABOUT_TEXT_FADE_START;
-          const aboutFade = Math.max(
-            0,
-            Math.min(1, (progress - ABOUT_TEXT_FADE_START) / aboutRange),
-          );
-          (aboutText as HTMLElement).style.opacity = smoothstep(aboutFade).toString();
-
-          ticking = false;
-        };
-
-        const onScroll = () => {
-          if (!ticking) {
-            requestAnimationFrame(update);
-            ticking = true;
-          }
-        };
-
-        window.addEventListener('scroll', onScroll, { passive: true });
-        window.addEventListener('resize', onScroll, { passive: true });
-        update();
-      }
-    </script>
   </body>
 </html>
