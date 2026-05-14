@@ -1,4 +1,6 @@
 ---
+import Analytics from '@vercel/analytics/astro';
+import SpeedInsights from '@vercel/speed-insights/astro';
 import '../styles/fonts.css';
 import '../styles/tokens.css';
 
@@ -90,5 +92,7 @@ const pageTitle = 'Not found — Edward Anders';
       <p>Edward has moved home.</p>
       <a href="/">← See the new home</a>
     </main>
+    <Analytics />
+    <SpeedInsights />
   </body>
 </html>

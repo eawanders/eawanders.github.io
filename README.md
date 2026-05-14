@@ -36,6 +36,31 @@ pnpm format:check # CI-friendly check
 
 Vercel auto-deploys on push to `main` and creates preview deployments for every PR.
 
+## Analytics
+
+Vercel Web Analytics and Speed Insights are mounted on every page. Both are
+cookieless and use anonymised aggregate data, so no consent banner is
+required under GDPR.
+
+Dashboards live in the Vercel project under **Analytics** (pageviews,
+referrers, top pages) and **Speed Insights** (Core Web Vitals — CLS, LCP,
+INP).
+
+Custom events:
+
+| Event          | Where it fires                                            | Properties      |
+| -------------- | --------------------------------------------------------- | --------------- |
+| `pdf_download` | Any `<a href="*.pdf">` click on the site                  | `file`, `href`  |
+| `nav_click`    | Click on a nav-bar item (about / research / projects …)   | `section`       |
+| `section_view` | Each section's first time entering the active scroll band | `section`       |
+
+`section_view` is deduped per-session via an in-memory `Set`, so scrolling
+up and back down a section won't double-count.
+
+Currently tracked PDFs: `edward-anders-cv.pdf`, `edward-anders-mphil-thesis.pdf`.
+Events appear in Vercel Analytics under **Custom Events** with a 24h delay
+on first deploy.
+
 ## DNS
 
 Domain `eawanders.com` registered and DNS-managed via Cloudflare.
