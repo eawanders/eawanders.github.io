@@ -1,0 +1,94 @@
+---
+import '../styles/fonts.css';
+import '../styles/tokens.css';
+
+const pageTitle = 'Not found — Edward Anders';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" href="/favicon-32.png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+    <meta name="robots" content="noindex" />
+    <link
+      rel="preload"
+      href="/fonts/CaslonOldFace-Regular.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="/fonts/GeistMono-Variable.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <title>{pageTitle}</title>
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+      }
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--font-body);
+        background: #f5f2ec;
+        color: #002d1a;
+        padding: 2rem;
+        box-sizing: border-box;
+      }
+      main {
+        text-align: center;
+        max-width: 32rem;
+      }
+      h1 {
+        font-family: var(--font-display);
+        font-weight: 400;
+        font-size: clamp(4rem, 12vw, 8rem);
+        line-height: var(--line-height-display);
+        letter-spacing: var(--letter-spacing-display);
+        margin: 0 0 1rem;
+      }
+      p {
+        font-family: var(--font-body);
+        font-size: 1rem;
+        font-weight: 300;
+        line-height: 1.6;
+        margin: 0 0 2rem;
+      }
+      a {
+        font-family: var(--font-body);
+        font-size: 1rem;
+        font-weight: 300;
+        color: inherit;
+        text-decoration: underline;
+        text-underline-offset: 0.2em;
+        transition: opacity 180ms ease;
+      }
+      a:hover {
+        opacity: 0.7;
+      }
+      a:focus-visible {
+        outline: 2px solid currentColor;
+        outline-offset: 4px;
+        border-radius: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>404</h1>
+      <p>Edward has moved home.</p>
+      <a href="/">← See the new home</a>
+    </main>
+  </body>
+</html>
