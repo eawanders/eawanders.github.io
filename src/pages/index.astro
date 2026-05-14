@@ -46,10 +46,17 @@ const heroBgStyle = 'opacity: 1';
       html {
         scroll-behavior: smooth;
         scroll-padding-top: 4rem;
+        /*
+         * Mandatory scroll-snap on each section's top edge — the page
+         * always settles at a section boundary so the user doesn't drift
+         * mid-transition.
+         */
+        scroll-snap-type: y mandatory;
       }
       @media (prefers-reduced-motion: reduce) {
         html {
           scroll-behavior: auto;
+          scroll-snap-type: none;
         }
       }
       body {
@@ -63,8 +70,11 @@ const heroBgStyle = 'opacity: 1';
         min-height: 100vh;
         padding: 6rem 2rem 4rem;
         box-sizing: border-box;
+        scroll-snap-align: start;
+        scroll-snap-stop: always;
       }
-      .section h2 {
+      .section h2,
+      .fixed-content h2 {
         font-family: var(--font-display);
         font-weight: 400;
         font-size: clamp(2rem, 4vw, 3rem);
@@ -72,14 +82,16 @@ const heroBgStyle = 'opacity: 1';
         letter-spacing: var(--letter-spacing-display);
         margin: 0 0 1.5rem;
       }
-      .section h3 {
+      .section h3,
+      .fixed-content h3 {
         font-family: var(--font-body);
         font-size: 1rem;
         font-weight: 500;
         letter-spacing: 0.02em;
         margin: 2rem 0 0.75rem;
       }
-      .section p {
+      .section p,
+      .fixed-content p {
         font-family: var(--font-body);
         font-size: 1rem;
         font-weight: 300;
@@ -87,7 +99,8 @@ const heroBgStyle = 'opacity: 1';
         max-width: 32rem;
         margin: 0 0 1rem;
       }
-      .section ul {
+      .section ul,
+      .fixed-content ul {
         font-family: var(--font-body);
         font-size: 1rem;
         font-weight: 300;
@@ -97,33 +110,36 @@ const heroBgStyle = 'opacity: 1';
         padding: 0;
         list-style: none;
       }
-      .section ul li {
+      .section ul li,
+      .fixed-content ul li {
         margin: 0 0 0.25rem;
       }
       /*
-       * Content block that pins itself to the right side of the section,
-       * mirroring the 2rem left rail used for the nav and hero. Used by
-       * sections whose background painting lives on the left.
+       * Fixed-position content blocks — sit at vertical-centre of the
+       * viewport on opposite sides. They do not scroll with the page;
+       * they only fade in/out via opacity tied to scroll progress.
+       * This keeps the typography visually settled while the background
+       * cross-fades between sections.
        */
-      .section-content {
-        max-width: 32rem;
-      }
-      .section-content--right {
-        margin-left: auto;
-      }
-      /*
-       * Hero section: title sits at left-middle of the first viewport so it
-       * acts as the splash, then fades out + scrolls naturally out of view as
-       * the user moves to the next section.
-       */
-      .hero {
-        position: absolute;
+      .fixed-content {
+        position: fixed;
         top: 50%;
-        left: 2rem;
         transform: translateY(-50%);
         max-width: 32rem;
+        z-index: 10;
         will-change: opacity;
+        pointer-events: none;
       }
+      .fixed-content--left {
+        left: 2rem;
+      }
+      .fixed-content--right {
+        right: 2rem;
+      }
+      /*
+       * Hero text block — uses .fixed-content--left. Renamed-from .hero but
+       * the inner typography styles stay the same.
+       */
       .hero h1 {
         font-family: var(--font-display);
         font-weight: 400;
@@ -145,39 +161,42 @@ const heroBgStyle = 'opacity: 1';
     <BackgroundLoop sectionKey="top" style={heroBgStyle} />
     <BackgroundLoop sectionKey="about" style={aboutBgStyle} />
     <Nav />
+
+    <!--
+      Fixed-position content blocks — sit at vertical-centre of the viewport
+      and cross-fade via opacity tied to scroll progress. The empty sections
+      below provide scroll length and snap targets for the page.
+    -->
+    <div class="hero fixed-content fixed-content--left" data-section-content="top">
+      <h1>{pageTitle}</h1>
+      <p>Researching the political and societal impacts of AI. Data science PhD at the University of Oxford. Building the infrastructure for synthetic agents.</p>
+    </div>
+
+    <div class="fixed-content fixed-content--right" data-section-content="about" style="opacity: 0">
+      <h2>About</h2>
+      <p>Placeholder bio paragraph — long-form first-person introduction. Two or three sentences on background, current focus, and approach. Replace with real copy.</p>
+      <p>Optional second paragraph for context — methods, collaborators, or what's coming next.</p>
+
+      <h3>Education</h3>
+      <ul>
+        <li>PhD, Data Science — University of Oxford (in progress)</li>
+        <li>Prior degree — Institution, year</li>
+      </ul>
+
+      <h3>Selected roles</h3>
+      <ul>
+        <li>Role — Organisation, dates</li>
+        <li>Role — Organisation, dates</li>
+      </ul>
+    </div>
+
     <main>
-      <section id="top" class="section section-hero">
-        <div class="hero">
-          <h1>{pageTitle}</h1>
-          <p>Researching the political and societal impacts of AI. Data science PhD at the University of Oxford. Building the infrastructure for synthetic agents.</p>
-        </div>
-      </section>
-
-      <section id="about" class="section">
-        <div class="section-content section-content--right">
-          <h2>About</h2>
-          <p>Placeholder bio paragraph — long-form first-person introduction. Two or three sentences on background, current focus, and approach. Replace with real copy.</p>
-          <p>Optional second paragraph for context — methods, collaborators, or what's coming next.</p>
-
-          <h3>Education</h3>
-          <ul>
-            <li>PhD, Data Science — University of Oxford (in progress)</li>
-            <li>Prior degree — Institution, year</li>
-          </ul>
-
-          <h3>Selected roles</h3>
-          <ul>
-            <li>Role — Organisation, dates</li>
-            <li>Role — Organisation, dates</li>
-          </ul>
-        </div>
-      </section>
-
+      <section id="top" class="section"></section>
+      <section id="about" class="section"></section>
       <section id="research" class="section">
         <h2>Research</h2>
         <p>Placeholder content for the research section. Publications and projects coming soon.</p>
       </section>
-
       <section id="projects" class="section">
         <h2>Projects</h2>
         <p>Placeholder content for the projects section. Selected work coming soon.</p>
@@ -200,7 +219,8 @@ const heroBgStyle = 'opacity: 1';
       ).matches;
 
       const heroSection = document.querySelector('#top');
-      const heroText = document.querySelector('.hero');
+      const heroText = document.querySelector('[data-section-content="top"]');
+      const aboutText = document.querySelector('[data-section-content="about"]');
       const topLayer = document.querySelector(
         '.bg-loop-layer[data-bg-section="top"]'
       );
@@ -212,6 +232,7 @@ const heroBgStyle = 'opacity: 1';
         !prefersReducedMotion &&
         heroSection &&
         heroText &&
+        aboutText &&
         topLayer &&
         aboutLayer
       ) {
@@ -220,11 +241,12 @@ const heroBgStyle = 'opacity: 1';
         // smoothstep ease — slow at both ends, fast through the middle.
         const smoothstep = (t: number) => t * t * (3 - 2 * t);
 
-        // Pacing — all transitions complete well before the about content
-        // reaches its final position (scrollY ≈ heroHeight), so the page
-        // is visually settled by the time the user reads it.
-        const HERO_TEXT_FADE_END = 0.4; // hero title gone by 40% of hero scroll
-        const BG_FADE_END = 0.75;       // background cross-fade complete by 75%
+        // Pacing — both text and background transitions complete before the
+        // user lands at the about snap point.
+        const HERO_TEXT_FADE_END = 0.4;  // hero title gone by 40% of hero scroll
+        const ABOUT_TEXT_FADE_START = 0.5; // about appears from 50%
+        const ABOUT_TEXT_FADE_END = 0.9;   // about fully in by 90%
+        const BG_FADE_END = 0.75;
 
         const update = () => {
           const heroHeight = heroSection.getBoundingClientRect().height;
@@ -233,16 +255,23 @@ const heroBgStyle = 'opacity: 1';
             Math.min(1, window.scrollY / Math.max(heroHeight, 1))
           );
 
-          // Background layers: smoothstep cross-fade that completes by 75%
+          // Background layers: smoothstep cross-fade, complete by 75%
           const bgProgress = Math.min(1, progress / BG_FADE_END);
           const bgEased = smoothstep(bgProgress);
           (topLayer as HTMLElement).style.opacity = (1 - bgEased).toString();
           (aboutLayer as HTMLElement).style.opacity = bgEased.toString();
 
-          // Hero text: tighter range, smoothstep curve
-          const textProgress = Math.min(1, progress / HERO_TEXT_FADE_END);
-          const textOpacity = 1 - smoothstep(textProgress);
-          (heroText as HTMLElement).style.opacity = textOpacity.toString();
+          // Hero text: fade out 0 → HERO_TEXT_FADE_END
+          const heroFade = Math.min(1, progress / HERO_TEXT_FADE_END);
+          (heroText as HTMLElement).style.opacity = (1 - smoothstep(heroFade)).toString();
+
+          // About text: fade in ABOUT_TEXT_FADE_START → ABOUT_TEXT_FADE_END
+          const aboutRange = ABOUT_TEXT_FADE_END - ABOUT_TEXT_FADE_START;
+          const aboutFade = Math.max(
+            0,
+            Math.min(1, (progress - ABOUT_TEXT_FADE_START) / aboutRange)
+          );
+          (aboutText as HTMLElement).style.opacity = smoothstep(aboutFade).toString();
 
           ticking = false;
         };
