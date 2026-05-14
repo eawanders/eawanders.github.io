@@ -493,7 +493,7 @@ const contactBgStyle = [
   </head>
   <body>
     <BackgroundLoop
-      sectionKey="top"
+      sectionKey="home"
       videoBase="/bg/research-loop"
       posterBase="/bg/research-poster"
       style={heroBgStyle}
@@ -519,7 +519,7 @@ const contactBgStyle = [
       and cross-fade via opacity tied to scroll progress. The empty sections
       below provide scroll length and snap targets for the page.
     -->
-    <div class="hero fixed-content fixed-content--centre-top" data-section-content="top">
+    <div class="hero fixed-content fixed-content--centre-top" data-section-content="home">
       <h1>{pageTitle}</h1>
       <p>
         Data Science PhD at the University of
@@ -743,7 +743,7 @@ const contactBgStyle = [
       </div>
 
       <main>
-        <section id="top" class="section"></section>
+        <section id="home" class="section"></section>
         <section id="about" class="section"></section>
         <section id="research" class="section"></section>
         <section id="projects" class="section"></section>
@@ -758,7 +758,7 @@ const contactBgStyle = [
         // data-section-content. Section ordering in the DOM defines the
         // index; the scroll progress is measured in units of one hero-height
         // (sections are min-height 100vh, so progress = scrollY / heroHeight
-        // gives 0 at #top, 1 at #about, 2 at #research, ...).
+        // gives 0 at #home, 1 at #about, 2 at #research, ...).
         //
         // For each layer / text we apply a smoothstep fade-in coming from
         // the previous section and a smoothstep fade-out going to the next.
