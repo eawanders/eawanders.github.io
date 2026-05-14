@@ -136,6 +136,13 @@ const aboutBgStyle = [
         top: 50%;
         transform: translateY(-50%);
         max-width: 32rem;
+        /*
+         * border-box so max-height (and width) include padding — otherwise
+         * a large padding-top on the about block would push the element
+         * past the bottom of the viewport, making the bottom of the inner
+         * scroll unreachable.
+         */
+        box-sizing: border-box;
         z-index: 10;
         will-change: opacity;
         /*
@@ -294,7 +301,7 @@ const aboutBgStyle = [
       <h2>About</h2>
       <p>
         Edward is a DPhil candidate in Social Data Science at the Oxford Internet Institute,
-        building synthetic electorates to predict political and social behaviour.
+        building synthetic electorates to predict political behaviour.
       </p>
 
       <h3>Education</h3>
@@ -306,21 +313,19 @@ const aboutBgStyle = [
             <p class="additional-subtext">
               Shirley Scholar</p>
             <p>
-              <p>Oxford Internet Institute. Predicting how the</p>
+              <p>Oxford Internet Institute. Using synthetic agent-based models of the Uk electorate to predict political behaviour under different AI-generated treatments.</p>
             </p>
           </details>
           <li>
             <details>
               <summary
-                >MPhil Politics (Comparative Government) — St Antony's College, Oxford</summary
+                >MPhil Politics — St Antony's College, Oxford</summary
               >
               <p class="date">2024–2026</p>
+              <p class="additional-subtext">Dahrendorf Scholar</p>
               <p>
-                Distinction expected. MPhil research paper investigates whether labelling
-                AI-generated political content mitigates or deepens affective polarisation — two
-                YouGov-fielded UK survey experiments and a formal theoretical model linking labels
-                through trust and emotion to polarisation outcomes.
-              </p>
+                Papers on advanced experimental, quantitative, and computational social science. Thesis investigated whether labelling
+                AI-generated political content mitigates or deepens affective polarisation using survey experiments funded by YouGov.              </p>
             </details>
           </li>
           <li>
