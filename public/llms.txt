@@ -1,0 +1,54 @@
+# Edward Anders
+
+> DPhil candidate in Social Data Science at the Oxford Internet Institute,
+> University of Oxford. Researching how AI-generated content shapes
+> affective polarisation across democracies, using quantitative and
+> computational methods to understand political behaviour.
+
+This personal site is a single long-scroll page with four content sections
+(About, Research, Projects, Contact) and a splash hero. The links below
+point to each section anchor on the homepage.
+
+## About
+
+- [About — bio, education, experience](https://eawanders.com/#about): DPhil
+  Social Data Science (Jesus College, Oxford, 2026–), MPhil Politics
+  (St Antony's, Oxford, 2024–2026), BSc Economics and Politics (Bristol,
+  2018–2021). Roles at Nuffield College (Graduate Researcher), Oxford
+  Levant Advisory (Research Analyst), Complyance (Strategy Research
+  Manager), Compose (Senior Founder's Associate).
+- [Curriculum vitae (PDF)](https://eawanders.com/edward-anders-cv.pdf)
+
+## Research
+
+- [Research — focus, publications, grants](https://eawanders.com/#research)
+- [MPhil thesis: AI Labels and Affective Polarisation (PDF, working paper, 2026)](https://eawanders.com/edward-anders-mphil-thesis.pdf):
+  formal model of AI labels → trust → emotion → polarisation, tested
+  with two YouGov-fielded UK survey experiments. Implications for the
+  EU AI Act's content-disclosure requirements.
+- "Talking To Machines: Synthetic Replication Games" — Duch, Batistoni
+  et al. (Anders co-author, forthcoming, PNAS / Nature Computational
+  Science in preparation). Platform for LLM-powered experimental trials
+  in the social sciences, Nuffield College, Oxford.
+- Grants: Oxford CESS Research Grant (£1,500, 2025); Norman Chester Fund
+  Research Grant (£1,000, 2025); YouGov UniOM Survey Experiment Grant
+  (×2, ~£1,000 each, 2024 + 2025).
+
+## Projects
+
+- [Projects](https://eawanders.com/#projects)
+- [Simparlia](https://simparlia.com/): simulating parliamentarian voting
+  behaviour through digital AI personas of MPs.
+
+## Contact
+
+- [Contact](https://eawanders.com/#contact)
+- Email: edward.anders@politics.ox.ac.uk
+- X / Twitter: https://x.com/edwardaw
+- GitHub: https://github.com/eawanders
+- Oxford profile: https://www.politics.ox.ac.uk/person/edward-anders
+
+## Site
+
+- Sitemap: https://eawanders.com/sitemap-index.xml
+- Robots: https://eawanders.com/robots.txt
