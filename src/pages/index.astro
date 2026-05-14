@@ -37,12 +37,15 @@ const aboutBgStyle = [
   'opacity: 0',
 ].join('; ');
 
-// Research uses the oil painting (default videoBase) with the right-anchored
-// vignette setup the hero originally had — 10vw cream rail on the left, wider
-// ellipse, smaller opaque core.
+// Research uses the same oil painting as About. Inset + bg-offset match
+// About exactly so the painting layer sits in an identical XY position
+// — only the vignette anchor flips (left for About, right for Research)
+// and the ellipse widens / core shrinks. With painting positions
+// matched, the about→research cross-fade is a pure opacity swap with
+// no perceptible horizontal shift in the background.
 const researchBgStyle = [
-  '--inset-left: 10vw',
-  '--vignette-size: 130% 180%',
+  '--bg-offset-x: 0%',
+  '--vignette-size: 110% 180%',
   '--vignette-core: 15%',
   'opacity: 0',
 ].join('; ');
@@ -59,6 +62,27 @@ const projectsBgStyle = [
   '--vignette-cx: 50%',
   '--vignette-cy: 60%',
   '--vignette-core: 10%',
+  '--vignette-edge: 50%',
+  '--bg-offset-x: 50%',
+  '--bg-offset-y: 100%',
+  '--bg-shift-y: 80px',
+  'opacity: 0',
+].join('; ');
+
+// Contact reuses the horses video and keeps the painting in the SAME visual
+// position as Projects (matching inset-top + bg-offset + bg-shift). The
+// vignette is a wide, short horizontal-band ellipse so cream fades in both
+// at the TOP and at the BOTTOM of the painting, with the bottom band larger
+// (cy biased up). The 10vh inset-top also gives a cream rail above the box.
+const contactBgStyle = [
+  '--inset-top: 10vh',
+  '--inset-left: 0vw',
+  '--inset-right: 0vw',
+  '--vignette-shape: ellipse',
+  '--vignette-size: 400% 65%',
+  '--vignette-cx: 50%',
+  '--vignette-cy: 35%',
+  '--vignette-core: 5%',
   '--vignette-edge: 50%',
   '--bg-offset-x: 50%',
   '--bg-offset-y: 100%',
@@ -325,42 +349,111 @@ const projectsBgStyle = [
         text-align: center;
         max-width: 40rem;
       }
-      /* Projects block widens to fit a three-column grid */
-      .fixed-content--projects {
-        max-width: 64rem;
-        width: calc(100vw - 4rem);
+      /*
+       * Mirror of --centre-top — anchored near the BOTTOM of the viewport,
+       * for sections whose painting sits at the top and content sits in
+       * the cream band below. Used by Contact.
+       */
+      .fixed-content--centre-bottom {
+        top: auto;
+        bottom: 3vh;
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%);
+        text-align: center;
+        max-width: 40rem;
       }
-      .projects-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 2.5rem;
+      /*
+       * Contact block — email link prominent, three SVG social icons in a
+       * row below.
+       */
+      .contact-email {
+        font-family: var(--font-body);
+        font-size: 1.25rem;
+        font-weight: 300;
+        margin: 0 0 2rem;
+      }
+      .contact-socials {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 1.75rem;
+        margin: 0;
+      }
+      .contact-socials a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2rem;
+        height: 2rem;
+        color: inherit;
+        text-decoration: none;
+        transition: opacity 180ms ease;
+      }
+      .contact-socials a:hover {
+        opacity: 0.65;
+      }
+      .contact-socials svg {
+        width: 1.5rem;
+        height: 1.5rem;
+        fill: currentColor;
+      }
+      /* Oxford crest PNG — sized slightly larger so the lettering reads */
+      .contact-socials img {
+        width: 1.75rem;
+        height: 1.75rem;
+        object-fit: contain;
+      }
+      /*
+       * Projects block — uses the centre-top positioning (block centred in
+       * the viewport) but widens just enough to fit the "Projects" heading
+       * + the single project card with a small gap between them.
+       */
+      .fixed-content--projects {
+        max-width: 44rem;
         text-align: left;
       }
-      @media (max-width: 768px) {
-        .projects-grid {
-          grid-template-columns: 1fr;
-          gap: 2rem;
-        }
+      /*
+       * Projects layout — two tightly-spaced columns: "Projects" heading
+       * on the left, the single project card on the right. Both columns
+       * sit centred together in the middle of the viewport.
+       */
+      .projects-layout {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 2rem;
+        align-items: start;
+      }
+      .projects-title {
+        margin: 0;
       }
       .project {
         display: flex;
         flex-direction: column;
+        max-width: 28rem;
+      }
+      @media (max-width: 768px) {
+        .projects-layout {
+          grid-template-columns: 1fr;
+          gap: 2rem;
+        }
       }
       /*
-       * Project headers use the Caslon display face — larger and more
-       * prominent than the inline h3 used inside accordions.
+       * Project title — sized to match .projects-title (h2) exactly so
+       * their glyph tops align on the same baseline when the layout
+       * places them in adjacent columns.
        */
       .project h3 {
         font-family: var(--font-display);
         font-weight: 400;
-        font-size: clamp(1.5rem, 2.5vw, 2rem);
+        font-size: clamp(2rem, 4vw, 3rem);
         line-height: var(--line-height-display);
         letter-spacing: var(--letter-spacing-display);
-        margin: 0 0 0.75rem;
+        margin: 0 0 1.5rem;
       }
       .project p {
         font-family: var(--font-body);
-        font-size: 0.95rem;
+        font-size: 1rem;
         font-weight: 300;
         line-height: 1.6;
         max-width: none;
@@ -387,7 +480,7 @@ const projectsBgStyle = [
         font-size: clamp(2.5rem, 6vw, 5rem);
         line-height: var(--line-height-display);
         letter-spacing: var(--letter-spacing-display);
-        margin: 0 0 3rem;
+        margin: 0 0 1rem;
       }
       .hero p {
         font-family: var(--font-body);
@@ -413,6 +506,12 @@ const projectsBgStyle = [
       posterBase="/bg/projects-poster"
       style={projectsBgStyle}
     />
+    <BackgroundLoop
+      sectionKey="contact"
+      videoBase="/bg/projects-loop"
+      posterBase="/bg/projects-poster"
+      style={contactBgStyle}
+    />
     <Nav />
 
     <!--
@@ -423,8 +522,8 @@ const projectsBgStyle = [
     <div class="hero fixed-content fixed-content--centre-top" data-section-content="top">
       <h1>{pageTitle}</h1>
       <p>
-        Researching the political and societal impacts of AI. Data science PhD at the University of
-        Oxford. Building the infrastructure for synthetic agents.
+        Data Science PhD at the University of
+        Oxford researching the political and societal impacts of AI and building the infrastructure for synthetic agents.
       </p>
     </div>
 
@@ -530,13 +629,25 @@ const projectsBgStyle = [
       >
         <h2>Research</h2>
         <p>
-          Placeholder research intro — one or two sentences framing the focus areas (synthetic
-          electorates, AI-generated content and political behaviour, affective polarisation) and
-          methods.
+          Research at the intersection of AI and computational social science, investigating the political and societal impacts of AI through large-scale experiments and synthetic agent-based models.
         </p>
 
         <h3>Publications</h3>
         <ul>
+          <li>
+            <details>
+              <summary>MPhil Thesis: AI Labels and Affective Polarisation</summary>
+              <p class="date">Working paper · 2026</p>
+              <p>
+                Understanding the effects of AI labels as a treatment to mitigate downstream effects of the effects of AI-generated content on trust and emotional-based affective polarisation. Developed a new formal model of the interaction between AI labels, trust, and emotions and tested experimentally with two survey experiments fielded by YouGov.
+              </p>
+              <p>
+                <a href="/edward-anders-mphil-thesis.pdf" target="_blank" rel="noopener"
+                  >Download thesis (PDF)</a
+                >
+              </p>
+            </details>
+          </li>
           <li>
             <details>
               <summary
@@ -548,22 +659,6 @@ const projectsBgStyle = [
                 Co-author on a paper from the Talking to Machines project at Nuffield College,
                 Oxford — a platform to facilitate the design, conduct, and analysis of large-scale
                 experimental trials using LLM-powered agents.
-              </p>
-            </details>
-          </li>
-          <li>
-            <details>
-              <summary>MPhil research paper on AI labelling and affective polarisation</summary>
-              <p class="date">Working paper · 2026</p>
-              <p>
-                Two YouGov-fielded UK survey experiments and a formal theoretical model linking AI
-                content labels through trust and emotion to polarisation outcomes. Speaks to the
-                EU AI Act's content-disclosure requirements.
-              </p>
-              <p>
-                <a href="/edward-anders-mphil-thesis.pdf" target="_blank" rel="noopener"
-                  >Download thesis (PDF)</a
-                >
               </p>
             </details>
           </li>
@@ -600,29 +695,51 @@ const projectsBgStyle = [
         data-section-content="projects"
         style="opacity: 0"
       >
-        <div class="projects-grid">
+        <div class="projects-layout">
+          <h2 class="projects-title">Projects</h2>
           <article class="project">
             <h3>Simparlia</h3>
-            <p>Simulating parliamentarian voting behaviour through digital AI personas of MPs.</p>
+            <p>Simulating parliamentarian voting behaviour using digital AI personas of UK MPs.</p>
             <p class="project-link">
               <a href="https://simparlia.com/" target="_blank" rel="noopener">simparlia.com →</a>
             </p>
           </article>
-          <article class="project">
-            <h3>Project two</h3>
-            <p>Short description. Replace with real copy.</p>
-            <p class="project-link">
-              <a href="#" target="_blank" rel="noopener">Link →</a>
-            </p>
-          </article>
-          <article class="project">
-            <h3>Project three</h3>
-            <p>Short description. Replace with real copy.</p>
-            <p class="project-link">
-              <a href="#" target="_blank" rel="noopener">Link →</a>
-            </p>
-          </article>
         </div>
+      </div>
+
+      <div
+        class="fixed-content fixed-content--centre-bottom"
+        data-section-content="contact"
+        style="opacity: 0"
+      >
+        <h2>Get in touch</h2>
+        <p class="contact-email">
+          <a href="mailto:edward.anders@politics.ox.ac.uk">edward.anders@politics.ox.ac.uk</a>
+        </p>
+        <p class="contact-socials">
+          <a href="https://x.com/edwardaw" target="_blank" rel="noopener" aria-label="X (formerly Twitter)">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"
+              />
+            </svg>
+          </a>
+          <a href="https://github.com/eawanders" target="_blank" rel="noopener" aria-label="GitHub">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.91 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222 0 1.606-.014 2.898-.014 3.293 0 .322.218.694.825.576C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"
+              />
+            </svg>
+          </a>
+          <a
+            href="https://www.politics.ox.ac.uk/person/edward-anders"
+            target="_blank"
+            rel="noopener"
+            aria-label="Oxford University profile"
+          >
+            <img src="/oxford-crest.png" alt="" aria-hidden="true" />
+          </a>
+        </p>
       </div>
 
       <main>
@@ -630,6 +747,7 @@ const projectsBgStyle = [
         <section id="about" class="section"></section>
         <section id="research" class="section"></section>
         <section id="projects" class="section"></section>
+        <section id="contact" class="section"></section>
       </main>
 
       <script>
