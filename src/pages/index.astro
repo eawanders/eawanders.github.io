@@ -5,6 +5,19 @@ import '../styles/fonts.css';
 import '../styles/tokens.css';
 
 const pageTitle = 'Edward Anders';
+
+// About-section background: placeholder uses the same painting as the hero but
+// the vignette is mirrored to the left so the two read as different scenes.
+// Swap videoBase / posterBase to the dedicated About asset once produced.
+const aboutBgStyle = [
+  '--vignette-cx: 0%',
+  '--bg-offset-x: 0%',
+  '--inset-left: 0vw',
+  '--inset-right: 10vw',
+  'opacity: 0',
+].join('; ');
+
+const heroBgStyle = 'opacity: 1';
 ---
 
 <!doctype html>
@@ -59,6 +72,13 @@ const pageTitle = 'Edward Anders';
         letter-spacing: var(--letter-spacing-display);
         margin: 0 0 1.5rem;
       }
+      .section h3 {
+        font-family: var(--font-body);
+        font-size: 1rem;
+        font-weight: 500;
+        letter-spacing: 0.02em;
+        margin: 2rem 0 0.75rem;
+      }
       .section p {
         font-family: var(--font-body);
         font-size: 1rem;
@@ -67,10 +87,23 @@ const pageTitle = 'Edward Anders';
         max-width: 32rem;
         margin: 0 0 1rem;
       }
+      .section ul {
+        font-family: var(--font-body);
+        font-size: 1rem;
+        font-weight: 300;
+        line-height: 1.6;
+        max-width: 32rem;
+        margin: 0 0 1rem;
+        padding: 0;
+        list-style: none;
+      }
+      .section ul li {
+        margin: 0 0 0.25rem;
+      }
       /*
        * Hero section: title sits at left-middle of the first viewport so it
-       * acts as the splash, then scrolls naturally out of view as the user
-       * moves to the next section.
+       * acts as the splash, then fades out + scrolls naturally out of view as
+       * the user moves to the next section.
        */
       .hero {
         position: absolute;
@@ -78,6 +111,7 @@ const pageTitle = 'Edward Anders';
         left: 2rem;
         transform: translateY(-50%);
         max-width: 32rem;
+        will-change: opacity;
       }
       .hero h1 {
         font-family: var(--font-display);
@@ -97,7 +131,8 @@ const pageTitle = 'Edward Anders';
     </style>
   </head>
   <body>
-    <BackgroundLoop />
+    <BackgroundLoop sectionKey="top" style={heroBgStyle} />
+    <BackgroundLoop sectionKey="about" style={aboutBgStyle} />
     <Nav />
     <main>
       <section id="top" class="section section-hero">
@@ -109,7 +144,20 @@ const pageTitle = 'Edward Anders';
 
       <section id="about" class="section">
         <h2>About</h2>
-        <p>Placeholder content for the about section. Real bio coming soon.</p>
+        <p>Placeholder bio paragraph — long-form first-person introduction. Two or three sentences on background, current focus, and approach. Replace with real copy.</p>
+        <p>Optional second paragraph for context — methods, collaborators, or what's coming next.</p>
+
+        <h3>Education</h3>
+        <ul>
+          <li>PhD, Data Science — University of Oxford (in progress)</li>
+          <li>Prior degree — Institution, year</li>
+        </ul>
+
+        <h3>Selected roles</h3>
+        <ul>
+          <li>Role — Organisation, dates</li>
+          <li>Role — Organisation, dates</li>
+        </ul>
       </section>
 
       <section id="research" class="section">
@@ -122,5 +170,77 @@ const pageTitle = 'Edward Anders';
         <p>Placeholder content for the projects section. Selected work coming soon.</p>
       </section>
     </main>
+
+    <script>
+      // Scroll-driven cross-fade between the hero and about background loops,
+      // and a synchronised opacity fade on the hero text (PER-144).
+      //
+      // Progress runs 0 → 1 as the user scrolls from the top of the page to
+      // the top of #about. The hero layer + hero text fade out; the about
+      // layer fades in. Reversed on scroll-up.
+      //
+      // rAF-throttled, passive listener. prefers-reduced-motion disables the
+      // effect and falls back to the initial CSS opacities (hero visible,
+      // about background hidden) so the user can still navigate via the nav.
+      const prefersReducedMotion = window.matchMedia(
+        '(prefers-reduced-motion: reduce)'
+      ).matches;
+
+      const heroSection = document.querySelector('#top');
+      const heroText = document.querySelector('.hero');
+      const topLayer = document.querySelector(
+        '.bg-loop-layer[data-bg-section="top"]'
+      );
+      const aboutLayer = document.querySelector(
+        '.bg-loop-layer[data-bg-section="about"]'
+      );
+
+      if (
+        !prefersReducedMotion &&
+        heroSection &&
+        heroText &&
+        topLayer &&
+        aboutLayer
+      ) {
+        let ticking = false;
+
+        // smoothstep ease — slow at both ends, fast through the middle.
+        const smoothstep = (t: number) => t * t * (3 - 2 * t);
+
+        // Hero text fades out faster than the background cross-fade so the
+        // title is gone before it slides under the nav, avoiding overlap.
+        const HERO_TEXT_FADE_END = 0.6;
+
+        const update = () => {
+          const heroHeight = heroSection.getBoundingClientRect().height;
+          const progress = Math.max(
+            0,
+            Math.min(1, window.scrollY / Math.max(heroHeight, 1))
+          );
+
+          // Background layers: linear cross-fade across the full hero scroll
+          (topLayer as HTMLElement).style.opacity = (1 - progress).toString();
+          (aboutLayer as HTMLElement).style.opacity = progress.toString();
+
+          // Hero text: tightened range + smoothstep curve for a deliberate feel
+          const textProgress = Math.min(1, progress / HERO_TEXT_FADE_END);
+          const textOpacity = 1 - smoothstep(textProgress);
+          (heroText as HTMLElement).style.opacity = textOpacity.toString();
+
+          ticking = false;
+        };
+
+        const onScroll = () => {
+          if (!ticking) {
+            requestAnimationFrame(update);
+            ticking = true;
+          }
+        };
+
+        window.addEventListener('scroll', onScroll, { passive: true });
+        window.addEventListener('resize', onScroll, { passive: true });
+        update();
+      }
+    </script>
   </body>
 </html>
