@@ -87,6 +87,15 @@ const {
     --bg-offset-x: 100%;
     --bg-offset-y: 0%;
 
+    /*
+     * --bg-shift-y  literal pixel/length translation applied to the video
+     *               frame via transform: translateY(). Use to nudge the
+     *               video up or down inside its layer when the box aspect
+     *               matches the video aspect (so object-position can't
+     *               crop). Positive values move the video down.
+     */
+    --bg-shift-y: 0px;
+
     position: fixed;
     inset: 0;
     z-index: -1;
@@ -170,6 +179,7 @@ const {
      * line at --inset-left. clip-path has no such compositor side-effect.
      */
     clip-path: inset(4px 0 4px 0);
+    transform: translateY(var(--bg-shift-y));
   }
 
   .bg-loop--poster {
@@ -182,6 +192,7 @@ const {
     object-fit: cover;
     object-position: var(--bg-offset-x) var(--bg-offset-y);
     clip-path: inset(4px 0 4px 0);
+    transform: translateY(var(--bg-shift-y));
     display: block;
   }
 
