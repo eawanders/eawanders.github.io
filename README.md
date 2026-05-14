@@ -1,6 +1,10 @@
-# eawanders.github.io
+# eawanders.com — personal website
 
-Personal website source. Production live at https://eawanders.com.
+Source for Edward Anders's personal site. Production live at https://eawanders.com.
+Repo is named `eawanders.github.io` for historical reasons (it was previously
+served by GitHub Pages); the `gh-pages` branch is retained as a static
+meta-refresh redirect from `eawanders.github.io` → `eawanders.com` so old
+links continue to resolve.
 
 ## Stack
 
