@@ -36,6 +36,17 @@ pnpm format:check # CI-friendly check
 
 Vercel auto-deploys on push to `main` and creates preview deployments for every PR.
 
+## SEO and link previews
+
+Per-page meta tags, canonical URLs, and OpenGraph/Twitter cards are
+rendered by `src/components/SEO.astro`, fed by `src/config/site.ts`.
+Title template: `Page title — Edward Anders` (homepage just `Edward Anders`).
+
+The default OG image is a 1200×630 JPEG at `public/og-default.jpg` — a
+pastoral oil painting matching the site's warm-newspaper backgrounds.
+Re-export from source by running `sips` against the raw painting (see
+prior commits for command).
+
 ## Analytics
 
 Vercel Web Analytics and Speed Insights are mounted on every page. Both are
