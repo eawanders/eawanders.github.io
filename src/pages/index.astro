@@ -6,6 +6,85 @@ import '../styles/tokens.css';
 
 const pageTitle = 'Edward Anders';
 
+// JSON-LD structured data (PER-153). Single @graph containing the Person
+// node + ScholarlyArticle entries cross-referenced via @id, so Edward's
+// authorship is canonical and not duplicated per article.
+const siteUrl = 'https://eawanders.com';
+const personId = `${siteUrl}/#edward-anders`;
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Person',
+      '@id': personId,
+      name: 'Edward Anders',
+      url: siteUrl,
+      jobTitle: 'DPhil Candidate, Social Data Science',
+      description:
+        'DPhil candidate at the Oxford Internet Institute researching how AI-generated content shapes affective polarisation across democracies.',
+      affiliation: {
+        '@type': 'CollegeOrUniversity',
+        name: 'Oxford Internet Institute, University of Oxford',
+        url: 'https://www.oii.ox.ac.uk/',
+      },
+      alumniOf: [
+        {
+          '@type': 'CollegeOrUniversity',
+          name: 'University of Oxford',
+          url: 'https://www.ox.ac.uk/',
+        },
+        {
+          '@type': 'CollegeOrUniversity',
+          name: 'University of Bristol',
+          url: 'https://www.bristol.ac.uk/',
+        },
+      ],
+      email: 'mailto:edward.anders@politics.ox.ac.uk',
+      sameAs: [
+        'https://x.com/edwardaw',
+        'https://github.com/eawanders',
+        'https://www.politics.ox.ac.uk/person/edward-anders',
+      ],
+    },
+    {
+      '@type': 'ScholarlyArticle',
+      '@id': `${siteUrl}/#mphil-thesis`,
+      name: 'AI Labels and Affective Polarisation',
+      alternateName: 'MPhil Thesis: AI Labels and Affective Polarisation',
+      author: { '@id': personId },
+      datePublished: '2026',
+      creativeWorkStatus: 'Working paper',
+      url: `${siteUrl}/edward-anders-mphil-thesis.pdf`,
+      encodingFormat: 'application/pdf',
+      description:
+        "Formal model of how AI labels affect trust, emotion, and affective polarisation, tested with two YouGov-fielded UK survey experiments. Speaks to the EU AI Act's content-disclosure requirements.",
+      isPartOf: {
+        '@type': 'EducationalOrganization',
+        name: 'University of Oxford',
+        url: 'https://www.ox.ac.uk/',
+      },
+    },
+    {
+      '@type': 'ScholarlyArticle',
+      '@id': `${siteUrl}/#talking-to-machines`,
+      name: 'Talking To Machines: Synthetic Replication Games',
+      author: [
+        { '@type': 'Person', name: 'Raymond Duch' },
+        { '@type': 'Person', name: 'Thomas Batistoni' },
+        { '@id': personId },
+      ],
+      creativeWorkStatus: 'Forthcoming',
+      description:
+        'Paper from the Talking to Machines project at Nuffield College, Oxford — a platform for the design, conduct, and analysis of large-scale experimental trials using LLM-powered agents.',
+      isPartOf: {
+        '@type': 'CollegeOrUniversity',
+        name: 'Nuffield College, University of Oxford',
+        url: 'https://www.nuffield.ox.ac.uk/',
+      },
+    },
+  ],
+};
+
 // Per-section vignette/inset overrides. The hero now uses the runner-through-
 // fields video with a bottom-anchored vignette (top half cream, bottom half
 // painting). About keeps the oil painting with a left-anchored vignette.
@@ -115,6 +194,8 @@ const contactBgStyle = [
       crossorigin
     />
     <title>{pageTitle}</title>
+    <script type="application/ld+json" set:html={JSON.stringify(structuredData)} />
+
     <style>
       html {
         scroll-behavior: smooth;
