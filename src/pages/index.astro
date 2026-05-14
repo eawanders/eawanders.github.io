@@ -101,6 +101,17 @@ const heroBgStyle = 'opacity: 1';
         margin: 0 0 0.25rem;
       }
       /*
+       * Content block that pins itself to the right side of the section,
+       * mirroring the 2rem left rail used for the nav and hero. Used by
+       * sections whose background painting lives on the left.
+       */
+      .section-content {
+        max-width: 32rem;
+      }
+      .section-content--right {
+        margin-left: auto;
+      }
+      /*
        * Hero section: title sits at left-middle of the first viewport so it
        * acts as the splash, then fades out + scrolls naturally out of view as
        * the user moves to the next section.
@@ -143,21 +154,23 @@ const heroBgStyle = 'opacity: 1';
       </section>
 
       <section id="about" class="section">
-        <h2>About</h2>
-        <p>Placeholder bio paragraph — long-form first-person introduction. Two or three sentences on background, current focus, and approach. Replace with real copy.</p>
-        <p>Optional second paragraph for context — methods, collaborators, or what's coming next.</p>
+        <div class="section-content section-content--right">
+          <h2>About</h2>
+          <p>Placeholder bio paragraph — long-form first-person introduction. Two or three sentences on background, current focus, and approach. Replace with real copy.</p>
+          <p>Optional second paragraph for context — methods, collaborators, or what's coming next.</p>
 
-        <h3>Education</h3>
-        <ul>
-          <li>PhD, Data Science — University of Oxford (in progress)</li>
-          <li>Prior degree — Institution, year</li>
-        </ul>
+          <h3>Education</h3>
+          <ul>
+            <li>PhD, Data Science — University of Oxford (in progress)</li>
+            <li>Prior degree — Institution, year</li>
+          </ul>
 
-        <h3>Selected roles</h3>
-        <ul>
-          <li>Role — Organisation, dates</li>
-          <li>Role — Organisation, dates</li>
-        </ul>
+          <h3>Selected roles</h3>
+          <ul>
+            <li>Role — Organisation, dates</li>
+            <li>Role — Organisation, dates</li>
+          </ul>
+        </div>
       </section>
 
       <section id="research" class="section">
@@ -207,9 +220,11 @@ const heroBgStyle = 'opacity: 1';
         // smoothstep ease — slow at both ends, fast through the middle.
         const smoothstep = (t: number) => t * t * (3 - 2 * t);
 
-        // Hero text fades out faster than the background cross-fade so the
-        // title is gone before it slides under the nav, avoiding overlap.
-        const HERO_TEXT_FADE_END = 0.6;
+        // Pacing — all transitions complete well before the about content
+        // reaches its final position (scrollY ≈ heroHeight), so the page
+        // is visually settled by the time the user reads it.
+        const HERO_TEXT_FADE_END = 0.4; // hero title gone by 40% of hero scroll
+        const BG_FADE_END = 0.75;       // background cross-fade complete by 75%
 
         const update = () => {
           const heroHeight = heroSection.getBoundingClientRect().height;
@@ -218,11 +233,13 @@ const heroBgStyle = 'opacity: 1';
             Math.min(1, window.scrollY / Math.max(heroHeight, 1))
           );
 
-          // Background layers: linear cross-fade across the full hero scroll
-          (topLayer as HTMLElement).style.opacity = (1 - progress).toString();
-          (aboutLayer as HTMLElement).style.opacity = progress.toString();
+          // Background layers: smoothstep cross-fade that completes by 75%
+          const bgProgress = Math.min(1, progress / BG_FADE_END);
+          const bgEased = smoothstep(bgProgress);
+          (topLayer as HTMLElement).style.opacity = (1 - bgEased).toString();
+          (aboutLayer as HTMLElement).style.opacity = bgEased.toString();
 
-          // Hero text: tightened range + smoothstep curve for a deliberate feel
+          // Hero text: tighter range, smoothstep curve
           const textProgress = Math.min(1, progress / HERO_TEXT_FADE_END);
           const textOpacity = 1 - smoothstep(textProgress);
           (heroText as HTMLElement).style.opacity = textOpacity.toString();
