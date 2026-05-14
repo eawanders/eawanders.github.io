@@ -5,6 +5,29 @@ import '../styles/fonts.css';
 import '../styles/tokens.css';
 
 const pageTitle = 'Edward Anders';
+
+// Per-section vignette/inset overrides. BackgroundLoop.astro's defaults now
+// describe the About section's look; the Hero overrides them back to its
+// original values. Both layers stay mounted as fixed-position siblings and
+// cross-fade via opacity on scroll.
+const heroBgStyle = [
+  // Hero box: 10vw cream rail on the left, full viewport elsewhere.
+  '--inset-left: 10vw',
+  // Hero vignette: wider ellipse, smaller opaque core — painting concentrated
+  // on the right with a long fade across the centre toward the cream rail.
+  '--vignette-size: 130% 180%',
+  '--vignette-core: 15%',
+  'opacity: 1',
+].join('; ');
+
+const aboutBgStyle = [
+  // Mirror the vignette + offset to the left so the painting reveals on the
+  // opposite side from the hero. Insets and vignette sizing come from the
+  // component defaults.
+  '--vignette-cx: 0%',
+  '--bg-offset-x: 0%',
+  'opacity: 0',
+].join('; ');
 ---
 
 <!doctype html>
@@ -33,10 +56,17 @@ const pageTitle = 'Edward Anders';
       html {
         scroll-behavior: smooth;
         scroll-padding-top: 4rem;
+        /*
+         * Mandatory scroll-snap on each section's top edge — the page
+         * always settles at a section boundary so the user doesn't drift
+         * mid-transition.
+         */
+        scroll-snap-type: y mandatory;
       }
       @media (prefers-reduced-motion: reduce) {
         html {
           scroll-behavior: auto;
+          scroll-snap-type: none;
         }
       }
       body {
@@ -50,8 +80,11 @@ const pageTitle = 'Edward Anders';
         min-height: 100vh;
         padding: 6rem 2rem 4rem;
         box-sizing: border-box;
+        scroll-snap-align: start;
+        scroll-snap-stop: always;
       }
-      .section h2 {
+      .section h2,
+      .fixed-content h2 {
         font-family: var(--font-display);
         font-weight: 400;
         font-size: clamp(2rem, 4vw, 3rem);
@@ -59,7 +92,16 @@ const pageTitle = 'Edward Anders';
         letter-spacing: var(--letter-spacing-display);
         margin: 0 0 1.5rem;
       }
-      .section p {
+      .section h3,
+      .fixed-content h3 {
+        font-family: var(--font-body);
+        font-size: 1rem;
+        font-weight: 500;
+        letter-spacing: 0.02em;
+        margin: 2rem 0 0.75rem;
+      }
+      .section p,
+      .fixed-content p {
         font-family: var(--font-body);
         font-size: 1rem;
         font-weight: 300;
@@ -67,18 +109,164 @@ const pageTitle = 'Edward Anders';
         max-width: 32rem;
         margin: 0 0 1rem;
       }
+      .section ul,
+      .fixed-content ul {
+        font-family: var(--font-body);
+        font-size: 1rem;
+        font-weight: 300;
+        line-height: 1.6;
+        max-width: 32rem;
+        margin: 0 0 1rem;
+        padding: 0;
+        list-style: none;
+      }
+      .section ul li,
+      .fixed-content ul li {
+        margin: 0 0 0.25rem;
+      }
       /*
-       * Hero section: title sits at left-middle of the first viewport so it
-       * acts as the splash, then scrolls naturally out of view as the user
-       * moves to the next section.
+       * Fixed-position content blocks — sit at vertical-centre of the
+       * viewport on opposite sides. They do not scroll with the page;
+       * they only fade in/out via opacity tied to scroll progress.
+       * This keeps the typography visually settled while the background
+       * cross-fades between sections.
        */
-      .hero {
-        position: absolute;
+      .fixed-content {
+        position: fixed;
         top: 50%;
-        left: 2rem;
         transform: translateY(-50%);
         max-width: 32rem;
+        /*
+         * border-box so max-height (and width) include padding — otherwise
+         * a large padding-top on the about block would push the element
+         * past the bottom of the viewport, making the bottom of the inner
+         * scroll unreachable.
+         */
+        box-sizing: border-box;
+        z-index: 10;
+        will-change: opacity;
+        /*
+         * pointer-events default to none; the scroll script toggles them
+         * to `auto` when the block becomes visible. Otherwise an invisible
+         * fixed block (opacity 0) would still intercept wheel and click
+         * events over half the viewport, blocking page scroll.
+         */
+        pointer-events: none;
       }
+      /*
+       * Inner scroll only on the right (about) block — the hero block is
+       * short and never overflows, so it doesn't need to become a wheel-
+       * capturing scroll container.
+       */
+      .fixed-content--right {
+        right: 2rem;
+        padding-top: 10rem;
+        max-height: calc(100vh - 4rem);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(0, 45, 26, 0.35) transparent;
+      }
+      .fixed-content--right::-webkit-scrollbar {
+        width: 6px;
+      }
+      .fixed-content--right::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .fixed-content--right::-webkit-scrollbar-thumb {
+        background: rgba(0, 45, 26, 0.35);
+        border-radius: 3px;
+      }
+      /*
+       * Accordion items — native <details>/<summary> with a custom chevron.
+       * Hides the browser's default marker, draws a `>` on the left of each
+       * summary, and rotates it 90° when the item is open.
+       */
+      .fixed-content details {
+        margin: 0 0 0.5rem;
+      }
+      .fixed-content summary {
+        list-style: none;
+        cursor: pointer;
+        display: flex;
+        align-items: baseline;
+        gap: 0.6rem;
+        font-family: var(--font-body);
+        font-size: 1rem;
+        font-weight: 300;
+        line-height: 1.6;
+        user-select: none;
+      }
+      .fixed-content summary::-webkit-details-marker {
+        display: none;
+      }
+      .fixed-content summary::before {
+        content: '›';
+        display: inline-block;
+        flex-shrink: 0;
+        font-weight: 400;
+        transform-origin: center 55%;
+        transition: transform 180ms ease;
+      }
+      .fixed-content details[open] summary::before {
+        transform: rotate(90deg);
+      }
+      .fixed-content details > *:not(summary) {
+        margin: 0.25rem 0 0.5rem 1.4rem;
+        font-size: 0.9rem;
+        font-weight: 300;
+        line-height: 1.55;
+        opacity: 0.82;
+      }
+      /* Date line inside an accordion — distinct from the description paragraph */
+      .fixed-content details .date {
+        font-weight: 500;
+        opacity: 1;
+        margin-bottom: 0.35rem;
+      }
+      /*
+       * Additional subtext inside an accordion — sits between the date and
+       * the description. Use for scholarships, honours, sub-titles, etc.
+       * Regular weight, full opacity, kept tight against the date above.
+       */
+      .fixed-content details .additional-subtext {
+        font-weight: 400;
+        opacity: 1;
+        margin-top: -0.15rem;
+        margin-bottom: 0.5rem;
+      }
+      /* Inline text link — used for the CV download at the bottom of about */
+      .fixed-content a {
+        color: inherit;
+        text-decoration: underline;
+        text-underline-offset: 0.2em;
+        transition: opacity 180ms ease;
+      }
+      .fixed-content a:hover {
+        opacity: 0.7;
+      }
+      .fixed-content a:focus-visible {
+        outline: 2px solid currentColor;
+        outline-offset: 4px;
+        border-radius: 2px;
+      }
+      .fixed-content .cv-download {
+        /*
+         * Higher specificity than the global `.fixed-content p` rule, so the
+         * top margin actually wins. Gives the CV link breathing room from
+         * the last accordion above.
+         */
+        margin: 2rem 0 0;
+        font-size: 1rem;
+        font-weight: 300;
+      }
+      .fixed-content--left {
+        left: 2rem;
+      }
+      /*
+       * Hero text block — uses .fixed-content--left. Renamed-from .hero but
+       * the inner typography styles stay the same.
+       */
       .hero h1 {
         font-family: var(--font-display);
         font-weight: 400;
@@ -97,30 +285,217 @@ const pageTitle = 'Edward Anders';
     </style>
   </head>
   <body>
-    <BackgroundLoop />
+    <BackgroundLoop sectionKey="top" style={heroBgStyle} />
+    <BackgroundLoop sectionKey="about" style={aboutBgStyle} />
     <Nav />
-    <main>
-      <section id="top" class="section section-hero">
-        <div class="hero">
-          <h1>{pageTitle}</h1>
-          <p>Researching the political and societal impacts of AI. Data science PhD at the University of Oxford. Building the infrastructure for synthetic agents.</p>
-        </div>
-      </section>
 
-      <section id="about" class="section">
-        <h2>About</h2>
-        <p>Placeholder content for the about section. Real bio coming soon.</p>
-      </section>
+    <!--
+      Fixed-position content blocks — sit at vertical-centre of the viewport
+      and cross-fade via opacity tied to scroll progress. The empty sections
+      below provide scroll length and snap targets for the page.
+    -->
+    <div class="hero fixed-content fixed-content--left" data-section-content="top">
+      <h1>{pageTitle}</h1>
+      <p>
+        Researching the political and societal impacts of AI. Data science PhD at the University of
+        Oxford. Building the infrastructure for synthetic agents.
+      </p>
+    </div>
 
-      <section id="research" class="section">
-        <h2>Research</h2>
-        <p>Placeholder content for the research section. Publications and projects coming soon.</p>
-      </section>
+    <div class="fixed-content fixed-content--right" data-section-content="about" style="opacity: 0">
+      <h2>About</h2>
+      <p>
+        Edward is a DPhil candidate in Social Data Science at the Oxford Internet Institute,
+        building synthetic electorates to predict political behaviour.
+      </p>
 
-      <section id="projects" class="section">
-        <h2>Projects</h2>
-        <p>Placeholder content for the projects section. Selected work coming soon.</p>
-      </section>
-    </main>
+      <h3>Education</h3>
+      <ul>
+        <li>
+          <details>
+            <summary>DPhil Social Data Science — Jesus College, Oxford</summary>
+            <p class="date">2026–</p>
+            <p class="additional-subtext">
+              Shirley Scholar</p>
+            <p>
+              <p>Oxford Internet Institute. Using synthetic agent-based models of the Uk electorate to predict political behaviour under different AI-generated treatments.</p>
+            </p>
+          </details>
+          <li>
+            <details>
+              <summary
+                >MPhil Politics — St Antony's College, Oxford</summary
+              >
+              <p class="date">2024–2026</p>
+              <p class="additional-subtext">Dahrendorf Scholar</p>
+              <p>
+                Papers on advanced experimental, quantitative, and computational social science. Thesis investigated whether labelling
+                AI-generated political content mitigates or deepens affective polarisation using survey experiments funded by YouGov.              </p>
+            </details>
+          </li>
+          <li>
+            <details>
+              <summary>BSc Economics and Politics — University of Bristol</summary>
+              <p class="date">2018–2021</p>
+              <p>
+                1st-Class Honours. Head of School's Commendation for the dissertation and final
+                year.
+              </p>
+            </details>
+          </li>
+        </li>
+
+        <h3>Experience</h3>
+        <ul>
+          <li>
+            <details>
+              <summary>Graduate Researcher — Nuffield College, Oxford</summary>
+              <p class="date">2025–</p>
+              <p>
+                Assisting Professor Rachel Bernhard on her Appearance-Based Politics book project.
+                Built PDF scraping and data-extraction pipelines in Python and built reproducible analysis scripts in R.
+              </p>
+            </details>
+          </li>
+          <li>
+            <details>
+              <summary>Research Analyst — Oxford Levant Advisory</summary>
+              <p class="date">2025–</p>
+              <p>
+                Building data solutions for a geopolitical risk consultancy. Developed a pipeline of live news and social media data on the Middle East building an open-source media map.
+              </p>
+            </details>
+          </li>
+          <li>
+            <details>
+              <summary>Strategy Research Manager — Complyance</summary>
+              <p class="date">2024–2025</p>
+              <p>
+                Employee #10 at a seed-stage AI GRC startup. Backed by Creandum. Established a post-sales department with the CSO and CEO. Led cybersecurity research across the EU AI Act, SOC2, ISO 27001, GDPR, and HIPPA for clients to define how forward-deployed engineering teams can deploy AI compliance agents.
+              </p>
+            </details>
+          </li>
+          <li>
+            <details>
+              <summary>Senior Founder's Associate — Compose</summary>
+              <p class="date">2021–2024</p>
+              <p>
+                Employee #1 at a Creandum-backed seed-stage startup building an all-in-one inbox management tool. Led operations and GTM as well as building the data infrastructure and analytics for user behaviour and growth. Hired and managed the first 5 employees across engineering, product, and growth functions.
+              </p>
+            </details>
+          </li>
+        </ul>
+
+        <p class="cv-download">
+          <a href="/edward-anders-cv.pdf" target="_blank" rel="noopener"
+            >Download full curriculum vitae</a
+          >
+        </p>
+      </div>
+
+      <main>
+        <section id="top" class="section"></section>
+        <section id="about" class="section"></section>
+        <section id="research" class="section">
+          <h2>Research</h2>
+          <p>
+            Placeholder content for the research section. Publications and projects coming soon.
+          </p>
+        </section>
+        <section id="projects" class="section">
+          <h2>Projects</h2>
+          <p>Placeholder content for the projects section. Selected work coming soon.</p>
+        </section>
+      </main>
+
+      <script>
+        // Scroll-driven cross-fade between the hero and about background loops,
+        // and a synchronised opacity fade on the hero text (PER-144).
+        //
+        // Progress runs 0 → 1 as the user scrolls from the top of the page to
+        // the top of #about. The hero layer + hero text fade out; the about
+        // layer fades in. Reversed on scroll-up.
+        //
+        // rAF-throttled, passive listener. prefers-reduced-motion disables the
+        // effect and falls back to the initial CSS opacities (hero visible,
+        // about background hidden) so the user can still navigate via the nav.
+        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        const heroSection = document.querySelector('#top');
+        const heroText = document.querySelector('[data-section-content="top"]');
+        const aboutText = document.querySelector('[data-section-content="about"]');
+        const topLayer = document.querySelector('.bg-loop-layer[data-bg-section="top"]');
+        const aboutLayer = document.querySelector('.bg-loop-layer[data-bg-section="about"]');
+
+        if (
+          !prefersReducedMotion &&
+          heroSection &&
+          heroText &&
+          aboutText &&
+          topLayer &&
+          aboutLayer
+        ) {
+          let ticking = false;
+
+          // smoothstep ease — slow at both ends, fast through the middle.
+          const smoothstep = (t: number) => t * t * (3 - 2 * t);
+
+          // Pacing — both text and background transitions complete before the
+          // user lands at the about snap point.
+          const HERO_TEXT_FADE_END = 0.4; // hero title gone by 40% of hero scroll
+          const ABOUT_TEXT_FADE_START = 0.5; // about appears from 50%
+          const ABOUT_TEXT_FADE_END = 0.9; // about fully in by 90%
+          const BG_FADE_END = 0.75;
+
+          const update = () => {
+            const heroHeight = heroSection.getBoundingClientRect().height;
+            const progress = Math.max(0, Math.min(1, window.scrollY / Math.max(heroHeight, 1)));
+
+            // Background layers: smoothstep cross-fade, complete by 75%
+            const bgProgress = Math.min(1, progress / BG_FADE_END);
+            const bgEased = smoothstep(bgProgress);
+            (topLayer as HTMLElement).style.opacity = (1 - bgEased).toString();
+            (aboutLayer as HTMLElement).style.opacity = bgEased.toString();
+
+            // Hero text: fade out 0 → HERO_TEXT_FADE_END
+            const heroFade = Math.min(1, progress / HERO_TEXT_FADE_END);
+            const heroOpacity = 1 - smoothstep(heroFade);
+            (heroText as HTMLElement).style.opacity = heroOpacity.toString();
+
+            // About text: fade in ABOUT_TEXT_FADE_START → ABOUT_TEXT_FADE_END
+            const aboutRange = ABOUT_TEXT_FADE_END - ABOUT_TEXT_FADE_START;
+            const aboutFade = Math.max(
+              0,
+              Math.min(1, (progress - ABOUT_TEXT_FADE_START) / aboutRange),
+            );
+            const aboutOpacity = smoothstep(aboutFade);
+            (aboutText as HTMLElement).style.opacity = aboutOpacity.toString();
+
+            /*
+             * Toggle pointer-events with visibility. Fixed blocks otherwise
+             * cover half the viewport even when fully transparent, swallowing
+             * wheel + click events and blocking page scroll.
+             */
+            (heroText as HTMLElement).style.pointerEvents =
+              heroOpacity > 0.05 ? 'auto' : 'none';
+            (aboutText as HTMLElement).style.pointerEvents =
+              aboutOpacity > 0.05 ? 'auto' : 'none';
+
+            ticking = false;
+          };
+
+          const onScroll = () => {
+            if (!ticking) {
+              requestAnimationFrame(update);
+              ticking = true;
+            }
+          };
+
+          window.addEventListener('scroll', onScroll, { passive: true });
+          window.addEventListener('resize', onScroll, { passive: true });
+          update();
+        }
+      </script>
+    </div>
   </body>
 </html>

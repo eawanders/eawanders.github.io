@@ -1,35 +1,61 @@
 ---
 // Painterly oil-painting loop, framed as a canvas (PER-161 → PER-162 → PER-167).
-// Cycles Day → Midpoint → Evening → Night → Dawn → Day every 18.4s.
-// Reduced-motion fallback (PER-163): static Day-state poster shown instead of the loop
-// when the user has `prefers-reduced-motion: reduce`. Both elements are decorative.
-// Inset from viewport with a soft gradient feather (PER-167) so the loop reads as a
-// painting on canvas rather than a full-bleed video.
+// Reusable per-section background (PER-144): each instance is wrapped in a
+// .bg-loop-layer container so it can be opacity-faded independently as the
+// user scrolls. Vignette/inset/offset variables live on the wrapper and the
+// inner video + poster siblings inherit them.
+//
+// Props:
+//   sectionKey  String. Used as `data-bg-section` for cross-fade scripts to
+//               match a layer to the section that should reveal it. Defaults
+//               to "top" (the hero).
+//   videoBase   Base path for video sources. Resolves to
+//               `${videoBase}-720p.{webm,mp4}` and `${videoBase}-1080p.{webm,mp4}`.
+//   posterBase  Base path for the reduced-motion poster. Resolves to
+//               `${posterBase}.{webp,jpg}`.
+//   style       Optional inline style for per-instance variable overrides,
+//               e.g. "--vignette-cx: 0%; --bg-offset-x: 0%;".
+
+interface Props {
+  sectionKey?: string;
+  videoBase?: string;
+  posterBase?: string;
+  style?: string;
+}
+
+const {
+  sectionKey = 'top',
+  videoBase = '/bg/bg-loop',
+  posterBase = '/bg/bg-poster',
+  style,
+} = Astro.props;
 ---
 
-<video
-  class="bg-loop bg-loop--video"
-  autoplay
-  muted
-  loop
-  playsinline
-  preload="auto"
-  poster="/bg/bg-poster.jpg"
-  aria-hidden="true"
->
-  <source src="/bg/bg-loop-720p.webm" type="video/webm" media="(max-width: 768px)" />
-  <source src="/bg/bg-loop-720p.mp4" type="video/mp4" media="(max-width: 768px)" />
-  <source src="/bg/bg-loop-1080p.webm" type="video/webm" />
-  <source src="/bg/bg-loop-1080p.mp4" type="video/mp4" />
-</video>
+<div class="bg-loop-layer" data-bg-section={sectionKey} style={style}>
+  <video
+    class="bg-loop bg-loop--video"
+    autoplay
+    muted
+    loop
+    playsinline
+    preload="auto"
+    poster={`${posterBase}.jpg`}
+    aria-hidden="true"
+  >
+    <source src={`${videoBase}-720p.webm`} type="video/webm" media="(max-width: 768px)" />
+    <source src={`${videoBase}-720p.mp4`} type="video/mp4" media="(max-width: 768px)" />
+    <source src={`${videoBase}-1080p.webm`} type="video/webm" />
+    <source src={`${videoBase}-1080p.mp4`} type="video/mp4" />
+  </video>
 
-<picture class="bg-loop bg-loop--poster" aria-hidden="true">
-  <source srcset="/bg/bg-poster.webp" type="image/webp" />
-  <img src="/bg/bg-poster.jpg" alt="" />
-</picture>
+  <picture class="bg-loop bg-loop--poster" aria-hidden="true">
+    <source srcset={`${posterBase}.webp`} type="image/webp" />
+    <img src={`${posterBase}.jpg`} alt="" />
+  </picture>
+</div>
 
 <style>
-  .bg-loop {
+  .bg-loop-layer {
     /*
      * Inset from each viewport edge — tune independently. Top and bottom
      * use a small negative inset so the element overflows the viewport by
@@ -40,89 +66,55 @@
     --inset-top: -4px;
     --inset-right: 0vw;
     --inset-bottom: -4px;
-    --inset-left: 10vw;
+    --inset-left: -10vw;
 
     /*
-     * Radial vignette knobs — single elliptical mask fading the painting
-     * into the page canvas. CSS radial-gradient cannot be rotated; for true
-     * angled gradients an SVG mask is required (ask if needed).
-     *
-     *   --vignette-shape   ellipse | circle
-     *   --vignette-size    Either an extent keyword (closest-side |
-     *                      farthest-side | closest-corner | farthest-corner)
-     *                      OR explicit ellipse axes as two lengths/percentages
-     *                      (e.g. "100% 80%" — first value is horizontal radius,
-     *                      second is vertical). Explicit axes give precise
-     *                      control over how far the fade reaches in each
-     *                      direction — useful for keeping specific corners
-     *                      clear of the vignette.
-     *   --vignette-cx,
-     *   --vignette-cy      Centre position in % of the box. Can extend beyond
-     *                      0–100% to push the centre off-screen.
-     *   --vignette-stops   Gradient colour stops. Default is the simple two-
-     *                      stop fade (opaque to --vignette-core, transparent
-     *                      at --vignette-edge). Override with any valid stop
-     *                      list for multi-stop / non-linear fades, e.g.
-     *                      "black 0%, black 50%, transparent 100%".
-     *   --vignette-core    (Used only by default --vignette-stops.) Radius (%)
-     *                      where the opaque region ends.
-     *   --vignette-edge    (Used only by default --vignette-stops.) Radius (%)
-     *                      where the fade reaches transparent.
-     *
-     * Preset: far-right placement, top/bottom-right corners clear of vignette:
-     *   --vignette-shape: ellipse;
-     *   --vignette-size: 100% 100%;
-     *   --vignette-cx: 100%; --vignette-cy: 50%;
-     *   --vignette-stops: black 0%, black 50%, transparent 100%;
+     * Radial vignette knobs — see comments below for the per-variable detail.
+     * Override per instance via the `style` prop.
      */
     --vignette-shape: ellipse;
-    --vignette-size: 130% 180%;
-    --vignette-core: 15%;
+    --vignette-size: 110% 180%;
+    --vignette-core: 25%;
     --vignette-edge: 57%;
     --vignette-cx: 100%;
     --vignette-cy: 50%;
     --vignette-stops: black 0%, black var(--vignette-core), transparent var(--vignette-edge);
 
-    /*
-     * Per-edge clear bands — force a specific edge transparent on top of
-     * the radial vignette. Composited with the radial via mask intersection.
-     *
-     *   --clear-left       width (%) of the left edge faded out (0% = no effect).
-     *                      Uniform vertical band: same intensity top to bottom.
-     *
-     *   --clear-top        vertical reach (%) of the top-left corner clearing,
-     *                      measured at the LEFT edge of the box. The clearing
-     *                      tapers elliptically toward the right.
-     *   --clear-top-right  horizontal reach (%) of the top clearing, measured
-     *                      at the TOP edge. 100% = clearing extends the full
-     *                      width; 0% = no clearing; lower values keep the
-     *                      right-hand side fully painted.
-     *
-     * The top clear is shaped as an ellipse anchored at the top-left corner,
-     * so the top-left is fully transparent and the fade falls off to fully
-     * opaque on the diagonal toward the bottom-right.
-     */
     --clear-left: 0%;
     --clear-top: 0%;
     --clear-top-right: 100%;
 
-    /*
-     * Background offset — shifts which part of the painting is visible
-     * inside the bg-loop box. Applied as object-position on the video and
-     * the poster. 0% = align that edge of the painting to that edge of the
-     * box; 50% = centred (default); 100% = opposite edge aligned.
-     * E.g. --bg-offset-x: 0% reveals more of the painting's left side.
-     */
     --bg-offset-x: 100%;
     --bg-offset-y: 0%;
 
     position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  /*
+   * Vignette controls (mirrored from previous BackgroundLoop comment block):
+   *   --vignette-shape   ellipse | circle
+   *   --vignette-size    extent keyword OR explicit "rx ry" lengths
+   *   --vignette-cx/cy   centre of the gradient in % of the box
+   *   --vignette-stops   gradient colour stops — override for non-linear fades
+   *   --vignette-core    used by default --vignette-stops; opaque-region radius
+   *   --vignette-edge    used by default --vignette-stops; transparent radius
+   *
+   *   --clear-left       extra horizontal clear band on the left edge (%)
+   *   --clear-top        vertical reach of corner-anchored top clear (%)
+   *   --clear-top-right  horizontal reach of the top clear (%)
+   *
+   *   --bg-offset-x/y    object-position for the painting inside the box
+   */
+
+  .bg-loop {
+    position: absolute;
     top: var(--inset-top);
     left: var(--inset-left);
     width: calc(100vw - var(--inset-left) - var(--inset-right));
     height: calc(100vh - var(--inset-top) - var(--inset-bottom));
-    z-index: -1;
-    pointer-events: none;
 
     /*
      * Three-layer mask, composited with intersection:
@@ -158,7 +150,7 @@
   }
 
   @media (max-width: 768px) {
-    .bg-loop {
+    .bg-loop-layer {
       --inset-top: 16px;
       --inset-right: 16px;
       --inset-bottom: 16px;
@@ -189,7 +181,6 @@
     height: 100%;
     object-fit: cover;
     object-position: var(--bg-offset-x) var(--bg-offset-y);
-    /* Same crop as the video so the reduced-motion fallback matches. */
     clip-path: inset(4px 0 4px 0);
     display: block;
   }
