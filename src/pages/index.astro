@@ -1,12 +1,14 @@
 ---
 import BackgroundLoop from '../components/BackgroundLoop.astro';
 import Nav from '../components/ui/Nav.astro';
+import SEO from '../components/SEO.astro';
 import Analytics from '@vercel/analytics/astro';
 import SpeedInsights from '@vercel/speed-insights/astro';
 import '../styles/fonts.css';
 import '../styles/tokens.css';
 
-const pageTitle = 'Edward Anders';
+// Hero heading. Page `<title>` is handled by <SEO />.
+const heroName = 'Edward Anders';
 
 // JSON-LD structured data (PER-153). Single @graph containing the Person
 // node + ScholarlyArticle entries cross-referenced via @id, so Edward's
@@ -195,7 +197,7 @@ const contactBgStyle = [
       type="font/woff2"
       crossorigin
     />
-    <title>{pageTitle}</title>
+    <SEO pathname="/" />
     <script type="application/ld+json" set:html={JSON.stringify(structuredData)} />
 
     <style>
@@ -603,7 +605,7 @@ const contactBgStyle = [
       below provide scroll length and snap targets for the page.
     -->
     <div class="hero fixed-content fixed-content--centre-top" data-section-content="home">
-      <h1>{pageTitle}</h1>
+      <h1>{heroName}</h1>
       <p>
         Data Science PhD at the University of
         Oxford researching the political and societal impacts of AI and building the infrastructure for synthetic agents.
