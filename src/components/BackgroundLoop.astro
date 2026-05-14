@@ -84,6 +84,15 @@ const {
     --clear-top: 0%;
     --clear-top-right: 100%;
 
+    /*
+     * --clear-bottom  vertical reach (%) of a soft bottom fade. 0 = no
+     *                 effect; larger values fade more of the bottom of the
+     *                 box to transparent. Uses a linear gradient so the
+     *                 fade is wider and softer than the corner-anchored
+     *                 ellipses above.
+     */
+    --clear-bottom: 0%;
+
     --bg-offset-x: 100%;
     --bg-offset-y: 0%;
 
@@ -126,10 +135,11 @@ const {
     height: calc(100vh - var(--inset-top) - var(--inset-bottom));
 
     /*
-     * Three-layer mask, composited with intersection:
+     * Four-layer mask, composited with intersection:
      *   1. Radial vignette (overall elliptical fade)
      *   2. Left clear band (extra fade on the left edge)
      *   3. Top clear band (extra fade on the top edge)
+     *   4. Bottom clear band (extra soft fade on the bottom edge)
      * Anywhere any layer is transparent, the final is transparent.
      */
     -webkit-mask-image:
@@ -142,7 +152,8 @@ const {
         ellipse var(--clear-top-right) var(--clear-top) at 0% 0%,
         transparent 0%,
         black 100%
-      );
+      ),
+      linear-gradient(to top, transparent 0%, black var(--clear-bottom));
     -webkit-mask-composite: source-in;
     mask-image:
       radial-gradient(
@@ -154,7 +165,8 @@ const {
         ellipse var(--clear-top-right) var(--clear-top) at 0% 0%,
         transparent 0%,
         black 100%
-      );
+      ),
+      linear-gradient(to top, transparent 0%, black var(--clear-bottom));
     mask-composite: intersect;
   }
 
