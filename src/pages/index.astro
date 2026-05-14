@@ -46,6 +46,25 @@ const researchBgStyle = [
   '--vignette-core: 15%',
   'opacity: 0',
 ].join('; ');
+
+// Projects uses its own horses video, with the same bottom-anchored vignette
+// and box geometry as the hero so the layout mirrors it (top half cream,
+// bottom half painting).
+const projectsBgStyle = [
+  '--inset-top: 10vh',
+  '--inset-left: 0vw',
+  '--inset-right: 0vw',
+  '--vignette-shape: ellipse',
+  '--vignette-size: 200% 100%',
+  '--vignette-cx: 50%',
+  '--vignette-cy: 60%',
+  '--vignette-core: 10%',
+  '--vignette-edge: 50%',
+  '--bg-offset-x: 50%',
+  '--bg-offset-y: 100%',
+  '--bg-shift-y: 80px',
+  'opacity: 0',
+].join('; ');
 ---
 
 <!doctype html>
@@ -292,7 +311,13 @@ const researchBgStyle = [
        * the viewport (instead of vertically centred at left). Sits on the
        * cream band above the bottom-anchored hero vignette.
        */
-      .fixed-content.hero {
+      /*
+       * Centred-top text layout — title and body sit horizontally centred,
+       * anchored near the top of the viewport. Used by the hero and the
+       * Projects section so they share a layout opposite the side-anchored
+       * About / Research blocks.
+       */
+      .fixed-content--centre-top {
         top: 15vh;
         left: 50%;
         right: auto;
@@ -300,13 +325,69 @@ const researchBgStyle = [
         text-align: center;
         max-width: 40rem;
       }
+      /* Projects block widens to fit a three-column grid */
+      .fixed-content--projects {
+        max-width: 64rem;
+        width: calc(100vw - 4rem);
+      }
+      .projects-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 2.5rem;
+        text-align: left;
+      }
+      @media (max-width: 768px) {
+        .projects-grid {
+          grid-template-columns: 1fr;
+          gap: 2rem;
+        }
+      }
+      .project {
+        display: flex;
+        flex-direction: column;
+      }
+      /*
+       * Project headers use the Caslon display face — larger and more
+       * prominent than the inline h3 used inside accordions.
+       */
+      .project h3 {
+        font-family: var(--font-display);
+        font-weight: 400;
+        font-size: clamp(1.5rem, 2.5vw, 2rem);
+        line-height: var(--line-height-display);
+        letter-spacing: var(--letter-spacing-display);
+        margin: 0 0 0.75rem;
+      }
+      .project p {
+        font-family: var(--font-body);
+        font-size: 0.95rem;
+        font-weight: 300;
+        line-height: 1.6;
+        max-width: none;
+        margin: 0;
+      }
+      /*
+       * Project link — sits below the description with a small gap.
+       * Uses the same underlined inline-link style as .fixed-content a.
+       * mt: auto pushes it to the bottom of its column when columns vary
+       * in length, so links stay aligned along the row.
+       */
+      .project .project-link {
+        /*
+         * Two-class specificity (0,2,0) wins over the global
+         * `.fixed-content p` rule (0,1,1), so this top margin actually
+         * applies. Increase to widen the gap between description + link.
+         */
+        margin: 2rem 0 0;
+        font-size: 0.95rem;
+      }
       .hero h1 {
         font-family: var(--font-display);
         font-weight: 400;
         font-size: clamp(2.5rem, 6vw, 5rem);
         line-height: var(--line-height-display);
         letter-spacing: var(--letter-spacing-display);
-        margin: 0 0 1rem;
+        margin: 0 0 3rem;
       }
       .hero p {
         font-family: var(--font-body);
@@ -326,6 +407,12 @@ const researchBgStyle = [
     />
     <BackgroundLoop sectionKey="about" style={aboutBgStyle} />
     <BackgroundLoop sectionKey="research" style={researchBgStyle} />
+    <BackgroundLoop
+      sectionKey="projects"
+      videoBase="/bg/projects-loop"
+      posterBase="/bg/projects-poster"
+      style={projectsBgStyle}
+    />
     <Nav />
 
     <!--
@@ -333,7 +420,7 @@ const researchBgStyle = [
       and cross-fade via opacity tied to scroll progress. The empty sections
       below provide scroll length and snap targets for the page.
     -->
-    <div class="hero fixed-content fixed-content--left" data-section-content="top">
+    <div class="hero fixed-content fixed-content--centre-top" data-section-content="top">
       <h1>{pageTitle}</h1>
       <p>
         Researching the political and societal impacts of AI. Data science PhD at the University of
@@ -508,14 +595,41 @@ const researchBgStyle = [
         </ul>
       </div>
 
+      <div
+        class="fixed-content fixed-content--centre-top fixed-content--projects"
+        data-section-content="projects"
+        style="opacity: 0"
+      >
+        <div class="projects-grid">
+          <article class="project">
+            <h3>Simparlia</h3>
+            <p>Simulating parliamentarian voting behaviour through digital AI personas of MPs.</p>
+            <p class="project-link">
+              <a href="https://simparlia.com/" target="_blank" rel="noopener">simparlia.com →</a>
+            </p>
+          </article>
+          <article class="project">
+            <h3>Project two</h3>
+            <p>Short description. Replace with real copy.</p>
+            <p class="project-link">
+              <a href="#" target="_blank" rel="noopener">Link →</a>
+            </p>
+          </article>
+          <article class="project">
+            <h3>Project three</h3>
+            <p>Short description. Replace with real copy.</p>
+            <p class="project-link">
+              <a href="#" target="_blank" rel="noopener">Link →</a>
+            </p>
+          </article>
+        </div>
+      </div>
+
       <main>
         <section id="top" class="section"></section>
         <section id="about" class="section"></section>
         <section id="research" class="section"></section>
-        <section id="projects" class="section">
-          <h2>Projects</h2>
-          <p>Placeholder content for the projects section. Selected work coming soon.</p>
-        </section>
+        <section id="projects" class="section"></section>
       </main>
 
       <script>
