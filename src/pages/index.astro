@@ -160,7 +160,7 @@ const aboutBgStyle = [
        */
       .fixed-content--right {
         right: 2rem;
-        padding-top: 20rem;
+        padding-top: 10rem;
         max-height: calc(100vh - 4rem);
         overflow-y: auto;
         overscroll-behavior: contain;
@@ -250,8 +250,13 @@ const aboutBgStyle = [
         outline-offset: 4px;
         border-radius: 2px;
       }
-      .cv-download {
-        margin: 1.5rem 0 0;
+      .fixed-content .cv-download {
+        /*
+         * Higher specificity than the global `.fixed-content p` rule, so the
+         * top margin actually wins. Gives the CV link breathing room from
+         * the last accordion above.
+         */
+        margin: 2rem 0 0;
         font-size: 1rem;
         font-weight: 300;
       }
@@ -340,16 +345,15 @@ const aboutBgStyle = [
           </li>
         </li>
 
-        <h3>Selected roles</h3>
+        <h3>Experience</h3>
         <ul>
           <li>
             <details>
-              <summary>Graduate Research Assistant — Nuffield College, Oxford</summary>
+              <summary>Graduate Researcher — Nuffield College, Oxford</summary>
               <p class="date">2025–</p>
               <p>
                 Assisting Professor Rachel Bernhard on her Appearance-Based Politics book project.
-                Built PDF scraping and data-extraction pipelines in R, verified reproducibility of
-                existing analysis, and tightened the project's documentation and version control.
+                Built PDF scraping and data-extraction pipelines in Python and built reproducible analysis scripts in R.
               </p>
             </details>
           </li>
@@ -358,32 +362,25 @@ const aboutBgStyle = [
               <summary>Research Analyst — Oxford Levant Advisory</summary>
               <p class="date">2025–</p>
               <p>
-                Producing data-driven reports for international clients on geopolitical and economic
-                risks in the Middle East — regulatory environments, operational constraints,
-                competitor activity, and the political and security dynamics shaping market access.
+                Building data solutions for a geopolitical risk consultancy. Developed a pipeline of live news and social media data on the Middle East building an open-source media map.
               </p>
             </details>
           </li>
           <li>
             <details>
-              <summary>Strategy Research Manager — Securely Technology</summary>
+              <summary>Strategy Research Manager — Complyance</summary>
               <p class="date">2024–2025</p>
               <p>
-                Employee #10 at a seed-stage AI GRC startup. Established a post-sales department
-                with the CSO and CEO. Cybersecurity research across the EU AI Act, SOC2 and ISO
-                27001. Led workshops presenting research to CISOs and CCOs of Fortune 500 companies.
+                Employee #10 at a seed-stage AI GRC startup. Backed by Creandum. Established a post-sales department with the CSO and CEO. Led cybersecurity research across the EU AI Act, SOC2, ISO 27001, GDPR, and HIPPA for clients to define how forward-deployed engineering teams can deploy AI compliance agents.
               </p>
             </details>
           </li>
           <li>
             <details>
-              <summary>Senior Founder's Associate — Quanterium Technologies</summary>
+              <summary>Senior Founder's Associate — Compose</summary>
               <p class="date">2021–2024</p>
               <p>
-                Employee #1 at a messaging startup for emerging markets. Led geopolitical research
-                on South America, owned cross-functional projects with legal, finance, and investors
-                (including an acquisition workstream), implemented product analytics, and
-                streamlined DevOps with engineering and product.
+                Employee #1 at a Creandum-backed seed-stage startup building an all-in-one inbox management tool. Led operations and GTM as well as building the data infrastructure and analytics for user behaviour and growth. Hired and managed the first 5 employees across engineering, product, and growth functions.
               </p>
             </details>
           </li>
