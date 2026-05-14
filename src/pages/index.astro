@@ -1,6 +1,8 @@
 ---
 import BackgroundLoop from '../components/BackgroundLoop.astro';
 import Nav from '../components/ui/Nav.astro';
+import Analytics from '@vercel/analytics/astro';
+import SpeedInsights from '@vercel/speed-insights/astro';
 import '../styles/fonts.css';
 import '../styles/tokens.css';
 
@@ -952,6 +954,20 @@ const contactBgStyle = [
           update();
         }
       </script>
+
+      <script>
+        // PDF download tracking via Vercel Analytics custom events.
+        // `window.va` is exposed once the Analytics script has injected.
+        document.addEventListener('click', (event) => {
+          const target = event.target instanceof Element ? event.target.closest('a[href$=".pdf"]') : null;
+          if (!target) return;
+          const href = target.getAttribute('href') || '';
+          const file = href.split('/').pop() || href;
+          window.va?.('event', { name: 'pdf_download', data: { file, href } });
+        });
+      </script>
     </div>
+    <Analytics />
+    <SpeedInsights />
   </body>
 </html>

@@ -28,11 +28,22 @@ const items = [
 
 <script>
   // Scroll-spy: mark the nav item that matches the section currently in
-  // the middle of the viewport with aria-current="page".
+  // the middle of the viewport with aria-current="page". Also emits
+  // Vercel Analytics custom events: `nav_click` per nav-link click and
+  // `section_view` once-per-session-per-section as sections enter the
+  // active band.
   const navLinks = document.querySelectorAll('.nav a[data-section]');
   const sections = document.querySelectorAll('section[id]');
 
+  navLinks.forEach((link) => {
+    link.addEventListener('click', () => {
+      const section = link.getAttribute('data-section') || '';
+      window.va?.('event', { name: 'nav_click', data: { section } });
+    });
+  });
+
   if ('IntersectionObserver' in window && navLinks.length && sections.length) {
+    const seenSections = new Set<string>();
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -45,6 +56,10 @@ const items = [
                 link.removeAttribute('aria-current');
               }
             });
+            if (!seenSections.has(id)) {
+              seenSections.add(id);
+              window.va?.('event', { name: 'section_view', data: { section: id } });
+            }
           }
         });
       },
