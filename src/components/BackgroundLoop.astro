@@ -179,6 +179,22 @@ const {
     --vignette-cy: 50%;
     --vignette-stops: black 0%, black var(--vignette-core), transparent var(--vignette-edge);
 
+    /*
+     * "Clear band" overrides — additional mask layers intersected with the
+     * vignette to extend the fade past specific edges. Defaults are 0%
+     * (no extra fade); sections that want a top/bottom/left fade past the
+     * vignette set these explicitly.
+     *
+     *   --clear-left       % horizontal fade-in band on the left edge
+     *   --clear-top        % vertical reach of a corner-anchored top-left fade
+     *   --clear-top-right  % horizontal reach of the top-left fade
+     *   --clear-bottom     % vertical fade-out band on the bottom edge
+     */
+    --clear-left: 0%;
+    --clear-top: 0%;
+    --clear-top-right: 100%;
+    --clear-bottom: 0%;
+
     --bg-offset-x: 100%;
     --bg-offset-y: 0%;
 
@@ -248,14 +264,43 @@ const {
      */
     inset: var(--inset-top) var(--inset-right) var(--inset-bottom) var(--inset-left);
     overflow: hidden;
-    -webkit-mask-image: radial-gradient(
-      var(--vignette-shape) var(--vignette-size) at var(--vignette-cx) var(--vignette-cy),
-      var(--vignette-stops)
-    );
-    mask-image: radial-gradient(
-      var(--vignette-shape) var(--vignette-size) at var(--vignette-cx) var(--vignette-cy),
-      var(--vignette-stops)
-    );
+    /*
+     * Four-layer mask, composited via intersect — restored from the pre-
+     * PER-158-refactor version because collapsing to a single radial-vignette
+     * removed a soft top fade that the contact section depended on
+     * (Chromium was rendering the degenerate layer-3 gradient as a usable
+     * vertical fade; WebKit was rendering layer-4 as fully-transparent and
+     * masking the whole painting out). Mask is now on this wrapping div
+     * (not on the <video>), which is the part of the refactor that fixed
+     * Safari — that stays. We may still need to revisit on WebKit but the
+     * Chrome regression is the user-visible priority right now.
+     */
+    -webkit-mask-image:
+      radial-gradient(
+        var(--vignette-shape) var(--vignette-size) at var(--vignette-cx) var(--vignette-cy),
+        var(--vignette-stops)
+      ),
+      linear-gradient(to right, transparent 0%, black var(--clear-left), black 100%),
+      radial-gradient(
+        ellipse var(--clear-top-right) var(--clear-top) at 0% 0%,
+        transparent 0%,
+        black 100%
+      ),
+      linear-gradient(to top, transparent 0%, black var(--clear-bottom));
+    -webkit-mask-composite: source-in;
+    mask-image:
+      radial-gradient(
+        var(--vignette-shape) var(--vignette-size) at var(--vignette-cx) var(--vignette-cy),
+        var(--vignette-stops)
+      ),
+      linear-gradient(to right, transparent 0%, black var(--clear-left), black 100%),
+      radial-gradient(
+        ellipse var(--clear-top-right) var(--clear-top) at 0% 0%,
+        transparent 0%,
+        black 100%
+      ),
+      linear-gradient(to top, transparent 0%, black var(--clear-bottom));
+    mask-composite: intersect;
   }
 
   .bg-loop {
