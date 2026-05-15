@@ -264,43 +264,14 @@ const {
      */
     inset: var(--inset-top) var(--inset-right) var(--inset-bottom) var(--inset-left);
     overflow: hidden;
-    /*
-     * Four-layer mask, composited via intersect — restored from the pre-
-     * PER-158-refactor version because collapsing to a single radial-vignette
-     * removed a soft top fade that the contact section depended on
-     * (Chromium was rendering the degenerate layer-3 gradient as a usable
-     * vertical fade; WebKit was rendering layer-4 as fully-transparent and
-     * masking the whole painting out). Mask is now on this wrapping div
-     * (not on the <video>), which is the part of the refactor that fixed
-     * Safari — that stays. We may still need to revisit on WebKit but the
-     * Chrome regression is the user-visible priority right now.
-     */
-    -webkit-mask-image:
-      radial-gradient(
-        var(--vignette-shape) var(--vignette-size) at var(--vignette-cx) var(--vignette-cy),
-        var(--vignette-stops)
-      ),
-      linear-gradient(to right, transparent 0%, black var(--clear-left), black 100%),
-      radial-gradient(
-        ellipse var(--clear-top-right) var(--clear-top) at 0% 0%,
-        transparent 0%,
-        black 100%
-      ),
-      linear-gradient(to top, transparent 0%, black var(--clear-bottom));
-    -webkit-mask-composite: source-in;
-    mask-image:
-      radial-gradient(
-        var(--vignette-shape) var(--vignette-size) at var(--vignette-cx) var(--vignette-cy),
-        var(--vignette-stops)
-      ),
-      linear-gradient(to right, transparent 0%, black var(--clear-left), black 100%),
-      radial-gradient(
-        ellipse var(--clear-top-right) var(--clear-top) at 0% 0%,
-        transparent 0%,
-        black 100%
-      ),
-      linear-gradient(to top, transparent 0%, black var(--clear-bottom));
-    mask-composite: intersect;
+    -webkit-mask-image: radial-gradient(
+      var(--vignette-shape) var(--vignette-size) at var(--vignette-cx) var(--vignette-cy),
+      var(--vignette-stops)
+    );
+    mask-image: radial-gradient(
+      var(--vignette-shape) var(--vignette-size) at var(--vignette-cx) var(--vignette-cy),
+      var(--vignette-stops)
+    );
   }
 
   .bg-loop {
