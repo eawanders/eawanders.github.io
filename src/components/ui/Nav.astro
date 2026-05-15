@@ -2,6 +2,9 @@
 // Primary navigation (PER-164, PER-169).
 // In-page anchor links to homepage sections. A client-side IntersectionObserver
 // updates aria-current as the user scrolls so the active section is highlighted.
+//
+// PER-158: below 768px the inline list is replaced by a hamburger button that
+// opens a full-screen overlay menu (matches the Simparlia mobile-nav pattern).
 
 const items = [
   { section: 'home', label: 'home' },
@@ -13,7 +16,7 @@ const items = [
 ---
 
 <nav class="nav" aria-label="Primary">
-  <ul>
+  <ul class="nav__list">
     {
       items.map(({ section, label }) => (
         <li>
@@ -24,15 +27,47 @@ const items = [
       ))
     }
   </ul>
+
+  <button
+    type="button"
+    class="nav__toggle"
+    aria-expanded="false"
+    aria-controls="mobile-menu"
+    aria-label="Open menu"
+    data-nav-toggle
+  >
+    <span class="nav__toggle-bars" aria-hidden="true">
+      <span class="nav__toggle-bar nav__toggle-bar--top"></span>
+      <span class="nav__toggle-bar nav__toggle-bar--mid"></span>
+      <span class="nav__toggle-bar nav__toggle-bar--bot"></span>
+    </span>
+  </button>
 </nav>
 
+<div
+  id="mobile-menu"
+  class="mobile-menu"
+  aria-hidden="true"
+  data-mobile-menu
+>
+  <ul class="mobile-menu__list">
+    {
+      items.map(({ section, label }) => (
+        <li>
+          <a href={`#${section}`} data-section={section} tabindex="-1">
+            {label}
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</div>
+
 <script>
-  // Scroll-spy: mark the nav item that matches the section currently in
-  // the middle of the viewport with aria-current="page". Also emits
-  // Vercel Analytics custom events: `nav_click` per nav-link click and
-  // `section_view` once-per-session-per-section as sections enter the
-  // active band.
-  const navLinks = document.querySelectorAll('.nav a[data-section]');
+  // Scroll-spy + nav telemetry (PER-154/PER-156).
+  // The desktop nav and the mobile overlay both expose links with the same
+  // data-section attribute, so the same observer/click delegation covers both.
+  const navLinks = document.querySelectorAll('a[data-section]');
   const sections = document.querySelectorAll('section[id]');
 
   navLinks.forEach((link) => {
@@ -70,6 +105,77 @@ const items = [
 
     sections.forEach((section) => observer.observe(section));
   }
+
+  // Mobile-menu open/close (PER-158).
+  const toggle = document.querySelector<HTMLButtonElement>('[data-nav-toggle]');
+  const menu = document.querySelector<HTMLDivElement>('[data-mobile-menu]');
+  const menuLinks = menu?.querySelectorAll<HTMLAnchorElement>('a[data-section]') ?? [];
+
+  function setMenuOpen(open: boolean) {
+    if (!toggle || !menu) return;
+    toggle.setAttribute('aria-expanded', String(open));
+    toggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    menu.setAttribute('aria-hidden', String(!open));
+    document.body.classList.toggle('is-menu-open', open);
+    menuLinks.forEach((link) => {
+      link.tabIndex = open ? 0 : -1;
+    });
+  }
+
+  toggle?.addEventListener('click', () => {
+    const open = toggle.getAttribute('aria-expanded') === 'true';
+    setMenuOpen(!open);
+  });
+
+  // Anchor links inside the overlay: drive scroll ourselves.
+  //
+  // We can't rely on the browser's default `<a href="#id">` behaviour here.
+  // The page has `scroll-snap-type: y mandatory` on <html> plus
+  // `scroll-snap-stop: always` on each section, and on iOS Safari the
+  // combination silently swallows programmatic anchor scrolls — the URL hash
+  // updates but the scroll never fires.
+  //
+  // Reliable path: preventDefault, temporarily disable scroll-snap so the
+  // smooth scroll isn't fought by the snap engine, compute the destination
+  // ourselves accounting for `scroll-padding-top`, scroll to it, and put
+  // snap back after the animation completes.
+  const html = document.documentElement;
+  const SCROLL_ANIMATION_MS = 700;
+
+  function scrollToSection(id: string) {
+    const target = document.getElementById(id);
+    if (!target) return;
+    const padding = parseFloat(getComputedStyle(html).scrollPaddingTop) || 0;
+    const top = target.getBoundingClientRect().top + window.scrollY - padding;
+    const prevSnap = html.style.scrollSnapType;
+    html.style.scrollSnapType = 'none';
+    window.scrollTo({ top, behavior: 'smooth' });
+    window.setTimeout(() => {
+      html.style.scrollSnapType = prevSnap;
+    }, SCROLL_ANIMATION_MS);
+  }
+
+  menuLinks.forEach((link) => {
+    link.addEventListener('click', (event) => {
+      const href = link.getAttribute('href');
+      if (!href || !href.startsWith('#')) return;
+      event.preventDefault();
+      const id = href.slice(1);
+      setMenuOpen(false);
+      history.replaceState(null, '', href);
+      // One frame's grace lets the overlay start fading before we kick off
+      // the scroll, so the destination is revealed under the closing menu.
+      requestAnimationFrame(() => scrollToSection(id));
+    });
+  });
+
+  // ESC closes the menu — common pattern, costs almost nothing.
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && toggle?.getAttribute('aria-expanded') === 'true') {
+      setMenuOpen(false);
+      toggle.focus();
+    }
+  });
 </script>
 
 <style>
@@ -77,10 +183,19 @@ const items = [
     position: fixed;
     top: 1.5rem;
     left: 2rem;
+    right: 2rem;
     z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    pointer-events: none;
   }
 
-  .nav ul {
+  .nav > * {
+    pointer-events: auto;
+  }
+
+  .nav__list {
     display: flex;
     align-items: center;
     gap: 3rem; /* 48px — matches Figma */
@@ -116,9 +231,171 @@ const items = [
     font-weight: 500;
   }
 
+  /* Hamburger button — hidden by default, shown below 768px. */
+  .nav__toggle {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    color: #002d1a;
+    cursor: pointer;
+    /* Sit above the overlay so the "close" tap still hits the button. */
+    position: relative;
+    z-index: 60;
+  }
+
+  .nav__toggle:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 4px;
+    border-radius: 2px;
+  }
+
+  .nav__toggle-bars {
+    position: relative;
+    width: 18px;
+    height: 14px;
+    display: block;
+  }
+
+  .nav__toggle-bar {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 1.5px;
+    background: currentColor;
+    transition:
+      top 300ms ease,
+      transform 300ms ease,
+      opacity 300ms ease;
+  }
+
+  .nav__toggle-bar--top {
+    top: 0;
+  }
+
+  .nav__toggle-bar--mid {
+    top: 6px;
+  }
+
+  .nav__toggle-bar--bot {
+    top: 12px;
+  }
+
+  /* Open state — top & bottom converge to centre and rotate into an X. */
+  .nav__toggle[aria-expanded='true'] .nav__toggle-bar--top {
+    top: 6px;
+    transform: rotate(45deg);
+  }
+
+  .nav__toggle[aria-expanded='true'] .nav__toggle-bar--mid {
+    opacity: 0;
+  }
+
+  .nav__toggle[aria-expanded='true'] .nav__toggle-bar--bot {
+    top: 6px;
+    transform: rotate(-45deg);
+  }
+
+  /* Mobile overlay — hidden on desktop, fades in on mobile when open. */
+  .mobile-menu {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    display: none;
+    background: rgba(245, 242, 236, 0.95);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 300ms ease;
+    /* When the menu is open, swallow touch gestures so iOS doesn't scroll
+     * the page underneath the overlay. */
+    touch-action: none;
+    overscroll-behavior: contain;
+  }
+
+  .mobile-menu[aria-hidden='false'] {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+
+  .mobile-menu__list {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 0.5rem;
+    height: 100%;
+    margin: 0;
+    padding: 0 2rem;
+    list-style: none;
+  }
+
+  .mobile-menu__list a {
+    display: inline-block;
+    font-family: var(--font-display);
+    font-size: clamp(28px, 6vw, 40px);
+    font-weight: 400;
+    line-height: var(--line-height-display);
+    letter-spacing: var(--letter-spacing-display);
+    color: #002d1a;
+    text-decoration: none;
+    padding: 0.5rem 0;
+    transition: opacity 180ms ease;
+  }
+
+  .mobile-menu__list a:hover {
+    opacity: 0.7;
+  }
+
+  .mobile-menu__list a[aria-current='page'] {
+    font-weight: 500;
+  }
+
+  @media (max-width: 768px) {
+    .nav {
+      top: 1rem;
+      left: 1rem;
+      right: 1rem;
+    }
+
+    .nav__list {
+      display: none;
+    }
+
+    .nav__toggle {
+      display: flex;
+      /* Hamburger sits in the top-right corner, matching Simparlia. */
+      margin-left: auto;
+    }
+
+    .mobile-menu {
+      display: block;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
-    .nav a {
+    .nav a,
+    .nav__toggle-bar,
+    .mobile-menu,
+    .mobile-menu__list a {
       transition: none;
     }
+  }
+</style>
+
+<style is:global>
+  /* Body scroll lock when the mobile menu is open. Kept as a global rule
+   * because it targets <body> directly — Astro's scoped CSS would otherwise
+   * attempt to suffix the selector. Pure CSS toggle (no inline-style swap)
+   * keeps the scroll-snap container in a stable state on iOS Safari. */
+  body.is-menu-open {
+    overflow: hidden;
   }
 </style>

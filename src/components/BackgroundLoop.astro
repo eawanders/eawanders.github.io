@@ -117,7 +117,15 @@ const {
 
     position: fixed;
     inset: 0;
-    z-index: -1;
+    /*
+     * z-index: 0 (not -1). On iOS Safari, position: fixed elements with a
+     * negative z-index are rendered BEHIND the root canvas, hiding the
+     * painting under whatever background colour is set on <html> or <body>.
+     * All overlay content has positive z-index (fixed-content: 10, nav: 50,
+     * hamburger/menu: 40-60), so z-index: 0 keeps the layer behind content
+     * while still painting on top of the root canvas everywhere.
+     */
+    z-index: 0;
     pointer-events: none;
   }
 

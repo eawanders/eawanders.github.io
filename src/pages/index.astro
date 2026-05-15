@@ -217,10 +217,20 @@ const contactBgStyle = [
           scroll-snap-type: none;
         }
       }
+      /*
+       * Cream background lives on <html>, NOT <body>. iOS Safari paints
+       * <body>'s background AFTER negative-z-index descendants, so a cream
+       * <body> would hide the BackgroundLoop layer (z-index: -1). Putting
+       * the colour on the root canvas keeps the painting visible on iOS
+       * while still rendering identically on desktop.
+       */
+      html {
+        background: #f5f2ec;
+      }
       body {
         margin: 0;
         font-family: var(--font-body);
-        background: #f5f2ec;
+        background: transparent;
         color: #002d1a;
       }
       .section {
