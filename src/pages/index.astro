@@ -585,6 +585,31 @@ const contactBgStyle = [
         margin: 0;
       }
     </style>
+
+    <!--
+      Eruda mobile devtools — loaded ONLY when the URL has `?debug=1`. Used
+      to diagnose iOS Safari rendering bugs from inside the phone's browser
+      when a USB cable to a Mac isn't available. Remove once PER-158 is
+      done so we don't ship an extra CDN fetch.
+    -->
+    <script type="text/javascript" is:inline>
+      (function () {
+        try {
+          var params = new URLSearchParams(window.location.search);
+          if (params.get('debug') !== '1') return;
+          var s = document.createElement('script');
+          s.src = 'https://cdn.jsdelivr.net/npm/eruda';
+          s.onload = function () {
+            if (window.eruda && typeof window.eruda.init === 'function') {
+              window.eruda.init();
+            }
+          };
+          document.head.appendChild(s);
+        } catch (err) {
+          // Swallow — debug helper, never block the page.
+        }
+      })();
+    </script>
   </head>
   <body>
     <BackgroundLoop
