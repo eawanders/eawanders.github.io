@@ -228,7 +228,19 @@ const {
     top: var(--inset-top);
     left: var(--inset-left);
     width: calc(100vw - var(--inset-left) - var(--inset-right));
+    /*
+     * 100vh on iOS Safari is the LAYOUT viewport — i.e. the viewport with
+     * the URL bar implicitly hidden. With the URL bar visible (or with the
+     * bottom tab bar in newer iOS Safari), the visible area is smaller
+     * than 100vh, so a frame sized to `100vh - insets` ends up with its
+     * bottom edge sitting above the URL bar, leaving a cream gap.
+     *
+     * 100dvh tracks the DYNAMIC viewport — the actual visible area at any
+     * given moment, recalculating as the URL bar shows or hides. Fallback
+     * declaration first for very old browsers that don't know dvh.
+     */
     height: calc(100vh - var(--inset-top) - var(--inset-bottom));
+    height: calc(100dvh - var(--inset-top) - var(--inset-bottom));
     overflow: hidden;
     -webkit-mask-image: radial-gradient(
       var(--vignette-shape) var(--vignette-size) at var(--vignette-cx) var(--vignette-cy),
@@ -251,7 +263,12 @@ const {
     .bg-loop-layer {
       --inset-top: 16px;
       --inset-right: 16px;
-      --inset-bottom: 16px;
+      /*
+       * Bottom inset matches the desktop default (-4px overflow that the
+       * .bg-loop--video clip-path crops). Gives a flush bottom edge on
+       * mobile rather than a 16px cream band above the URL bar.
+       */
+      --inset-bottom: -4px;
       --inset-left: 16px;
       --vignette-core: 40%;
     }
