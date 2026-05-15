@@ -3,7 +3,23 @@
 // Reusable per-section background (PER-144): each instance is wrapped in a
 // .bg-loop-layer container so it can be opacity-faded independently as the
 // user scrolls. Vignette/inset/offset variables live on the wrapper and the
-// inner video + poster siblings inherit them.
+// inner .bg-loop-frame (which carries the mask) reads them.
+//
+// PER-158 refactor: the mask used to be applied directly to the <video> and
+// <picture> elements, as four comma-separated gradient layers composited
+// with intersect. Two well-documented WebKit issues broke this on Safari
+// (desktop + iOS) and Chrome-on-iOS (which is WebKit under the hood):
+//   1. Masking a <video> directly is unreliable — video paints through a
+//      separate GPU compositor pass that WebKit doesn't consistently merge
+//      with CSS masks. Applying the mask to a regular wrapping <div> is
+//      reliable across all engines.
+//   2. Three of the four mask layers degenerated to identical 0% stops
+//      (the --clear-left/top/bottom defaults are 0% and no section
+//      overrides them). Chromium tolerates "two stops at the same offset"
+//      as fully opaque; WebKit resolves the bottom layer as fully
+//      transparent, which intersected the entire painting to invisible.
+// Fixed by moving the mask to .bg-loop-frame and collapsing to a single
+// radial-vignette gradient. The clear-* knobs are gone — they were unused.
 //
 // Props:
 //   sectionKey  String. Used as `data-bg-section` for cross-fade scripts to
@@ -25,8 +41,8 @@ interface Props {
   // off-screen sections don't tax the initial page load — the hero passes
   // `"auto"` explicitly. (PER-156 perf pass.)
   preload?: 'none' | 'metadata' | 'auto';
-  // Forwarded to the `<video>` and poster `<img>`. Hero passes "high" so
-  // the LCP-candidate poster is fetched ahead of off-screen assets.
+  // Forwarded to the `<video>`. Hero passes "high" so the LCP-candidate
+  // poster is fetched ahead of off-screen assets.
   fetchPriority?: 'high' | 'low' | 'auto';
 }
 
@@ -41,28 +57,101 @@ const {
 ---
 
 <div class="bg-loop-layer" data-bg-section={sectionKey} style={style}>
-  <video
-    class="bg-loop bg-loop--video"
-    autoplay
-    muted
-    loop
-    playsinline
-    preload={preload}
-    poster={`${posterBase}.webp`}
-    fetchpriority={fetchPriority}
-    aria-hidden="true"
-  >
-    <source src={`${videoBase}-720p.webm`} type="video/webm" media="(max-width: 768px)" />
-    <source src={`${videoBase}-720p.mp4`} type="video/mp4" media="(max-width: 768px)" />
-    <source src={`${videoBase}-1080p.webm`} type="video/webm" />
-    <source src={`${videoBase}-1080p.mp4`} type="video/mp4" />
-  </video>
+  <div class="bg-loop-frame">
+    {/*
+      Poster goes FIRST in DOM order so it sits behind the video. It's
+      always visible — the painting that the user sees if the video
+      never starts (Safari blocks autoplay, reduced-motion, decode
+      stall, etc.). The video then fades in ON TOP once it's actually
+      playing.
+    */}
+    <picture class="bg-loop bg-loop--poster" aria-hidden="true">
+      <source srcset={`${posterBase}.webp`} type="image/webp" />
+      <img src={`${posterBase}.jpg`} alt="" />
+    </picture>
 
-  <picture class="bg-loop bg-loop--poster" aria-hidden="true">
-    <source srcset={`${posterBase}.webp`} type="image/webp" />
-    <img src={`${posterBase}.jpg`} alt="" />
-  </picture>
+    <video
+      class="bg-loop bg-loop--video"
+      autoplay
+      muted
+      loop
+      playsinline
+      preload={preload}
+      poster={`${posterBase}.webp`}
+      fetchpriority={fetchPriority}
+      aria-hidden="true"
+      disablepictureinpicture
+    >
+      {/*
+        MP4 before WebM (PER-158). Safari's WebM decoder silently stalls
+        on some files and does not fall back to the next <source>.
+        Listing MP4 first gives both engines a format they decode
+        reliably.
+      */}
+      <source src={`${videoBase}-720p.mp4`} type="video/mp4" media="(max-width: 768px)" />
+      <source src={`${videoBase}-720p.webm`} type="video/webm" media="(max-width: 768px)" />
+      <source src={`${videoBase}-1080p.mp4`} type="video/mp4" />
+      <source src={`${videoBase}-1080p.webm`} type="video/webm" />
+    </video>
+  </div>
 </div>
+
+<script>
+  /*
+   * Poster-first strategy (PER-158).
+   *
+   * The <picture> poster is always rendered. The <video> starts at
+   * opacity: 0 and fades in only when its `playing` event fires —
+   * meaning the browser actually began decoding frames, not just that
+   * `.play()` returned a resolved promise.
+   *
+   * Why: Safari (desktop in particular) sometimes refuses muted
+   * autoplay despite the spec saying it should permit it — per-site
+   * preferences, window focus, or decode timing can all block it, and
+   * Safari then draws a "start playback" overlay on top of the video.
+   * Hiding that overlay via the WebKit media-controls pseudo-elements
+   * works in some Safari versions but Apple has progressively locked
+   * down those selectors. Setting opacity: 0 on the host <video>
+   * suppresses ALL its shadow-DOM content, controls included, because
+   * shadow-DOM elements inherit the host's opacity.
+   *
+   * Net result:
+   *   - Autoplay works → poster fades to video.
+   *   - Autoplay blocked → user sees the static poster painting and no
+   *     overlay. Acceptable degradation; the painting is the point.
+   *
+   * We also retry play() on the first user gesture in case Safari is
+   * waiting for one.
+   */
+  const videos = document.querySelectorAll<HTMLVideoElement>('.bg-loop--video');
+  if (
+    videos.length > 0 &&
+    !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  ) {
+    videos.forEach((video) => {
+      video.addEventListener('playing', () => {
+        video.dataset.playing = 'true';
+      });
+      const tryPlay = () => {
+        const promise = video.play();
+        if (promise && typeof promise.catch === 'function') {
+          promise.catch(() => {
+            /* Autoplay blocked — poster stays visible. */
+          });
+        }
+      };
+      tryPlay();
+    });
+
+    // First-gesture fallback. If Safari blocked the initial play(), the
+    // first time the user interacts with the page we retry every video.
+    const retryAll = () => videos.forEach((v) => v.play().catch(() => {}));
+    const events = ['pointerdown', 'touchstart', 'keydown'] as const;
+    events.forEach((evt) => {
+      document.addEventListener(evt, retryAll, { once: true, passive: true });
+    });
+  }
+</script>
 
 <style>
   .bg-loop-layer {
@@ -90,17 +179,20 @@ const {
     --vignette-cy: 50%;
     --vignette-stops: black 0%, black var(--vignette-core), transparent var(--vignette-edge);
 
+    /*
+     * "Clear band" overrides — additional mask layers intersected with the
+     * vignette to extend the fade past specific edges. Defaults are 0%
+     * (no extra fade); sections that want a top/bottom/left fade past the
+     * vignette set these explicitly.
+     *
+     *   --clear-left       % horizontal fade-in band on the left edge
+     *   --clear-top        % vertical reach of a corner-anchored top-left fade
+     *   --clear-top-right  % horizontal reach of the top-left fade
+     *   --clear-bottom     % vertical fade-out band on the bottom edge
+     */
     --clear-left: 0%;
     --clear-top: 0%;
     --clear-top-right: 100%;
-
-    /*
-     * --clear-bottom  vertical reach (%) of a soft bottom fade. 0 = no
-     *                 effect; larger values fade more of the bottom of the
-     *                 box to transparent. Uses a linear gradient so the
-     *                 fade is wider and softer than the corner-anchored
-     *                 ellipses above.
-     */
     --clear-bottom: 0%;
 
     --bg-offset-x: 100%;
@@ -116,75 +208,90 @@ const {
     --bg-shift-y: 0px;
 
     position: fixed;
-    inset: 0;
-    z-index: -1;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    /*
+     * Use 100dvh (with 100vh fallback) for the layer height itself, NOT
+     * just for the inner frame. Reason: on iOS Safari, `position: fixed`
+     * with `inset: 0` pins the layer to the LAYOUT viewport — i.e. the
+     * full Safari viewport with the URL bar implicitly hidden — even
+     * though the visible area (visual viewport) is smaller. That left
+     * the inner frame's calc(100dvh - insets) sized inconsistently
+     * with its parent's actual rendered bounds, producing a cream gap
+     * above the URL bar on mobile. Sizing the layer to 100dvh directly
+     * keeps layer + frame + visible viewport all in agreement.
+     */
+    height: 100vh;
+    height: 100dvh;
+    /*
+     * z-index: 0 (not -1). On iOS Safari, position: fixed elements with a
+     * negative z-index are rendered BEHIND the root canvas, hiding the
+     * painting under whatever background colour is set on <html> or <body>.
+     * All overlay content has positive z-index (fixed-content: 10, nav: 50,
+     * hamburger/menu: 40-60), so z-index: 0 keeps the layer behind content
+     * while still painting on top of the root canvas everywhere.
+     */
+    z-index: 0;
     pointer-events: none;
   }
 
   /*
-   * Vignette controls (mirrored from previous BackgroundLoop comment block):
+   * Vignette controls:
    *   --vignette-shape   ellipse | circle
    *   --vignette-size    extent keyword OR explicit "rx ry" lengths
    *   --vignette-cx/cy   centre of the gradient in % of the box
    *   --vignette-stops   gradient colour stops — override for non-linear fades
-   *   --vignette-core    used by default --vignette-stops; opaque-region radius
-   *   --vignette-edge    used by default --vignette-stops; transparent radius
-   *
-   *   --clear-left       extra horizontal clear band on the left edge (%)
-   *   --clear-top        vertical reach of corner-anchored top clear (%)
-   *   --clear-top-right  horizontal reach of the top clear (%)
-   *
-   *   --bg-offset-x/y    object-position for the painting inside the box
+   *   --vignette-core    opaque-region radius (% along the gradient line)
+   *   --vignette-edge    transparent radius (% along the gradient line)
+   *   --bg-offset-x/y    object-position for the painting inside the frame
+   *   --bg-shift-y       additional translateY applied to the painting
    */
+
+  /*
+   * The frame carries the mask AND the sizing. Children (video + poster)
+   * fill it and inherit visibility from the mask. WebKit renders this
+   * correctly because the mask is on a plain block element, not on the
+   * <video> element directly.
+   */
+  .bg-loop-frame {
+    position: absolute;
+    /*
+     * The frame fills the layer minus the four insets. Since the layer
+     * is now sized to 100vw × 100dvh, percentage insets here resolve
+     * against the visible viewport rather than the layout viewport.
+     * inset shorthand order: top right bottom left.
+     */
+    inset: var(--inset-top) var(--inset-right) var(--inset-bottom) var(--inset-left);
+    overflow: hidden;
+    -webkit-mask-image: radial-gradient(
+      var(--vignette-shape) var(--vignette-size) at var(--vignette-cx) var(--vignette-cy),
+      var(--vignette-stops)
+    );
+    mask-image: radial-gradient(
+      var(--vignette-shape) var(--vignette-size) at var(--vignette-cx) var(--vignette-cy),
+      var(--vignette-stops)
+    );
+  }
 
   .bg-loop {
     position: absolute;
-    top: var(--inset-top);
-    left: var(--inset-left);
-    width: calc(100vw - var(--inset-left) - var(--inset-right));
-    height: calc(100vh - var(--inset-top) - var(--inset-bottom));
-
-    /*
-     * Four-layer mask, composited with intersection:
-     *   1. Radial vignette (overall elliptical fade)
-     *   2. Left clear band (extra fade on the left edge)
-     *   3. Top clear band (extra fade on the top edge)
-     *   4. Bottom clear band (extra soft fade on the bottom edge)
-     * Anywhere any layer is transparent, the final is transparent.
-     */
-    -webkit-mask-image:
-      radial-gradient(
-        var(--vignette-shape) var(--vignette-size) at var(--vignette-cx) var(--vignette-cy),
-        var(--vignette-stops)
-      ),
-      linear-gradient(to right, transparent 0%, black var(--clear-left), black 100%),
-      radial-gradient(
-        ellipse var(--clear-top-right) var(--clear-top) at 0% 0%,
-        transparent 0%,
-        black 100%
-      ),
-      linear-gradient(to top, transparent 0%, black var(--clear-bottom));
-    -webkit-mask-composite: source-in;
-    mask-image:
-      radial-gradient(
-        var(--vignette-shape) var(--vignette-size) at var(--vignette-cx) var(--vignette-cy),
-        var(--vignette-stops)
-      ),
-      linear-gradient(to right, transparent 0%, black var(--clear-left), black 100%),
-      radial-gradient(
-        ellipse var(--clear-top-right) var(--clear-top) at 0% 0%,
-        transparent 0%,
-        black 100%
-      ),
-      linear-gradient(to top, transparent 0%, black var(--clear-bottom));
-    mask-composite: intersect;
+    inset: 0;
+    width: 100%;
+    height: 100%;
   }
 
   @media (max-width: 768px) {
     .bg-loop-layer {
       --inset-top: 16px;
       --inset-right: 16px;
-      --inset-bottom: 16px;
+      /*
+       * Negative bottom inset extends the frame slightly past the visible
+       * viewport on iOS Safari, so the painting goes flush to (and a bit
+       * behind) the URL bar rather than ending with a cream band above
+       * it. The clip-path on the video crops the overflow back cleanly.
+       */
+      --inset-bottom: -4px;
       --inset-left: 16px;
       --vignette-core: 40%;
     }
@@ -193,6 +300,7 @@ const {
   .bg-loop--video {
     object-fit: cover;
     object-position: var(--bg-offset-x) var(--bg-offset-y);
+    pointer-events: none;
     /*
      * Crop the top and bottom edges of the video to hide ~1px dark rows
      * baked into the source encoding. Uses clip-path rather than transform:
@@ -202,10 +310,49 @@ const {
      */
     clip-path: inset(4px 0 4px 0);
     transform: translateY(var(--bg-shift-y));
+    /*
+     * Starts invisible. The poster painting underneath fills in. Set to
+     * opacity: 1 only once the `playing` event has fired (JS toggles the
+     * data-playing attribute). This avoids two issues at once:
+     *   1. Safari's "blocked autoplay" overlay — the WebKit media controls
+     *      are inside the <video> element's shadow DOM and inherit the
+     *      host element's opacity, so opacity: 0 hides them too.
+     *   2. The brief gap between page load and the first decoded frame.
+     */
+    opacity: 0;
+    transition: opacity 400ms ease;
   }
 
+  .bg-loop--video[data-playing='true'] {
+    opacity: 1;
+  }
+
+  /*
+   * Belt-and-braces: also try to hide Safari's media controls via the
+   * WebKit pseudo-elements. These work in some Safari versions but not
+   * all — opacity: 0 above is the durable solution.
+   */
+  .bg-loop--video::-webkit-media-controls-start-playback-button {
+    display: none !important;
+    -webkit-appearance: none;
+  }
+
+  .bg-loop--video::-webkit-media-controls-overlay-play-button {
+    display: none !important;
+    -webkit-appearance: none;
+  }
+
+  .bg-loop--video::-webkit-media-controls {
+    display: none !important;
+  }
+
+  /*
+   * Poster: always visible. Sits behind the video and is what the user
+   * actually sees when autoplay fails (Safari blocked, reduced-motion,
+   * decode stall). When the video starts playing, it fades in on top.
+   */
   .bg-loop--poster {
-    display: none;
+    display: block;
   }
 
   .bg-loop--poster img {
@@ -221,10 +368,6 @@ const {
   @media (prefers-reduced-motion: reduce) {
     .bg-loop--video {
       display: none;
-    }
-
-    .bg-loop--poster {
-      display: block;
     }
   }
 </style>

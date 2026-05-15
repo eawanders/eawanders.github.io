@@ -165,8 +165,14 @@ const contactBgStyle = [
   '--vignette-size: 400% 65%',
   '--vignette-cx: 50%',
   '--vignette-cy: 35%',
-  '--vignette-core: 5%',
-  '--vignette-edge: 50%',
+  // PER-158: override --vignette-stops with an explicit S-curve.
+  // The default two-stop fall-off (`black 0%, black 5%, transparent 50%`)
+  // produces a perceptually hard transition on the contact section's
+  // top edge — the gradient passes through the eye's "just visible"
+  // threshold over too few pixels. Adding intermediate stops spreads
+  // the low-opacity region out so the cream→painting transition reads
+  // as a gradient instead of a line.
+  '--vignette-stops: black 0%, black 5%, rgba(0, 0, 0, 0.88) 14%, rgba(0, 0, 0, 0.65) 22%, rgba(0, 0, 0, 0.38) 30%, rgba(0, 0, 0, 0.18) 38%, rgba(0, 0, 0, 0.08) 44%, rgba(0, 0, 0, 0.03) 47%, transparent 50%',
   '--bg-offset-x: 50%',
   '--bg-offset-y: 100%',
   '--bg-shift-y: 80px',
@@ -217,10 +223,20 @@ const contactBgStyle = [
           scroll-snap-type: none;
         }
       }
+      /*
+       * Cream background lives on <html>, NOT <body>. iOS Safari paints
+       * <body>'s background AFTER negative-z-index descendants, so a cream
+       * <body> would hide the BackgroundLoop layer (z-index: -1). Putting
+       * the colour on the root canvas keeps the painting visible on iOS
+       * while still rendering identically on desktop.
+       */
+      html {
+        background: #f5f2ec;
+      }
       body {
         margin: 0;
         font-family: var(--font-body);
-        background: #f5f2ec;
+        background: transparent;
         color: #002d1a;
       }
       .section {
@@ -575,6 +591,31 @@ const contactBgStyle = [
         margin: 0;
       }
     </style>
+
+    <!--
+      Eruda mobile devtools — loaded ONLY when the URL has `?debug=1`. Used
+      to diagnose iOS Safari rendering bugs from inside the phone's browser
+      when a USB cable to a Mac isn't available. Remove once PER-158 is
+      done so we don't ship an extra CDN fetch.
+    -->
+    <script type="text/javascript" is:inline>
+      (function () {
+        try {
+          var params = new URLSearchParams(window.location.search);
+          if (params.get('debug') !== '1') return;
+          var s = document.createElement('script');
+          s.src = 'https://cdn.jsdelivr.net/npm/eruda';
+          s.onload = function () {
+            if (window.eruda && typeof window.eruda.init === 'function') {
+              window.eruda.init();
+            }
+          };
+          document.head.appendChild(s);
+        } catch (err) {
+          // Swallow — debug helper, never block the page.
+        }
+      })();
+    </script>
   </head>
   <body>
     <BackgroundLoop
