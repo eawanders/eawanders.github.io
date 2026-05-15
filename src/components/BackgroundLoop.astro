@@ -82,6 +82,26 @@ const {
   </div>
 </div>
 
+<script>
+  /*
+   * Safari (macOS in particular) sometimes refuses to honour the declarative
+   * `autoplay` attribute on muted videos when the page wasn't activated by
+   * a user gesture, and then renders its "start playback" control overlay
+   * on top of the painting. Calling .play() explicitly forces the issue —
+   * if Safari permits autoplay it's a no-op; if it doesn't, this triggers
+   * the same blocked-autoplay path silently (returns a rejected promise)
+   * but the controls remain hidden by the CSS rules above.
+   */
+  document.querySelectorAll<HTMLVideoElement>('.bg-loop--video').forEach((video) => {
+    const promise = video.play();
+    if (promise && typeof promise.catch === 'function') {
+      promise.catch(() => {
+        // Autoplay blocked — poster fallback continues to show.
+      });
+    }
+  });
+</script>
+
 <style>
   .bg-loop-layer {
     /*
@@ -190,6 +210,13 @@ const {
     object-fit: cover;
     object-position: var(--bg-offset-x) var(--bg-offset-y);
     /*
+     * The bg-loop-layer already has pointer-events: none, but Safari
+     * sometimes still shows a "start playback" overlay on muted-autoplay
+     * <video> elements when autoplay is blocked. Setting it explicitly
+     * here is belt-and-braces.
+     */
+    pointer-events: none;
+    /*
      * Crop the top and bottom edges of the video to hide ~1px dark rows
      * baked into the source encoding. Uses clip-path rather than transform:
      * scale() because a scaled `position: fixed` masked element produces a
@@ -198,6 +225,30 @@ const {
      */
     clip-path: inset(4px 0 4px 0);
     transform: translateY(var(--bg-shift-y));
+  }
+
+  /*
+   * WebKit media-control overlay killers. Safari (macOS and iOS) renders a
+   * "tap to play" overlay on <video> elements when it considers autoplay
+   * to have been blocked, even when the video is decorative and has no
+   * `controls` attribute. Hiding both the inline start-playback button
+   * and the centred overlay-play button removes the visible affordance.
+   * Paired with the explicit `.play()` call in <script> below — if Safari
+   * actually permits autoplay, the controls never show anyway; if it
+   * doesn't, JS forces the play and the controls remain hidden.
+   */
+  .bg-loop--video::-webkit-media-controls-start-playback-button {
+    display: none !important;
+    -webkit-appearance: none;
+  }
+
+  .bg-loop--video::-webkit-media-controls-overlay-play-button {
+    display: none !important;
+    -webkit-appearance: none;
+  }
+
+  .bg-loop--video::-webkit-media-controls {
+    display: none !important;
   }
 
   .bg-loop--poster {
