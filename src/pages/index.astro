@@ -582,6 +582,8 @@ const contactBgStyle = [
       videoBase="/bg/research-loop"
       posterBase="/bg/research-poster"
       style={heroBgStyle}
+      preload="auto"
+      fetchPriority="high"
     />
     <BackgroundLoop sectionKey="about" style={aboutBgStyle} />
     <BackgroundLoop sectionKey="research" style={researchBgStyle} />
@@ -629,38 +631,37 @@ const contactBgStyle = [
           <details>
             <summary>DPhil Social Data Science — Jesus College, Oxford</summary>
             <p class="date">2026–</p>
-            <p class="additional-subtext">
-              Shirley Scholar</p>
+            <p class="additional-subtext">Shirley Scholar</p>
             <p>
-              <p>Oxford Internet Institute. Using synthetic agent-based models of the Uk electorate to predict political behaviour under different AI-generated treatments.</p>
+              Oxford Internet Institute. Using synthetic agent-based models of the UK electorate to predict political behaviour under different AI-generated treatments.
             </p>
           </details>
-          <li>
-            <details>
-              <summary
-                >MPhil Politics — St Antony's College, Oxford</summary
-              >
-              <p class="date">2024–2026</p>
-              <p class="additional-subtext">Dahrendorf Scholar</p>
-              <p>
-                Papers on advanced experimental, quantitative, and computational social science. Thesis investigated whether labelling
-                AI-generated political content mitigates or deepens affective polarisation using survey experiments funded by YouGov.              </p>
-            </details>
-          </li>
-          <li>
-            <details>
-              <summary>BSc Economics and Politics — University of Bristol</summary>
-              <p class="date">2018–2021</p>
-              <p>
-                1st-Class Honours. Head of School's Commendation for the dissertation and final
-                year.
-              </p>
-            </details>
-          </li>
         </li>
+        <li>
+          <details>
+            <summary>MPhil Politics — St Antony's College, Oxford</summary>
+            <p class="date">2024–2026</p>
+            <p class="additional-subtext">Dahrendorf Scholar</p>
+            <p>
+              Papers on advanced experimental, quantitative, and computational social science. Thesis investigated whether labelling
+              AI-generated political content mitigates or deepens affective polarisation using survey experiments funded by YouGov.
+            </p>
+          </details>
+        </li>
+        <li>
+          <details>
+            <summary>BSc Economics and Politics — University of Bristol</summary>
+            <p class="date">2018–2021</p>
+            <p>
+              1st-Class Honours. Head of School's Commendation for the dissertation and final
+              year.
+            </p>
+          </details>
+        </li>
+      </ul>
 
-        <h3>Experience</h3>
-        <ul>
+      <h3>Experience</h3>
+      <ul>
           <li>
             <details>
               <summary>Graduate Researcher — Nuffield College, Oxford</summary>
@@ -822,7 +823,15 @@ const contactBgStyle = [
             rel="noopener"
             aria-label="Oxford University profile"
           >
-            <img src="/oxford-crest.png" alt="" aria-hidden="true" />
+            <img
+              src="/oxford-crest.png"
+              alt=""
+              aria-hidden="true"
+              loading="lazy"
+              decoding="async"
+              width="49"
+              height="49"
+            />
           </a>
         </p>
       </div>

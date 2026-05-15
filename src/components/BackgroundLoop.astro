@@ -21,6 +21,13 @@ interface Props {
   videoBase?: string;
   posterBase?: string;
   style?: string;
+  // `preload` is forwarded to the <video> element. Default `"none"` so
+  // off-screen sections don't tax the initial page load — the hero passes
+  // `"auto"` explicitly. (PER-156 perf pass.)
+  preload?: 'none' | 'metadata' | 'auto';
+  // Forwarded to the `<video>` and poster `<img>`. Hero passes "high" so
+  // the LCP-candidate poster is fetched ahead of off-screen assets.
+  fetchPriority?: 'high' | 'low' | 'auto';
 }
 
 const {
@@ -28,6 +35,8 @@ const {
   videoBase = '/bg/bg-loop',
   posterBase = '/bg/bg-poster',
   style,
+  preload = 'none',
+  fetchPriority = 'auto',
 } = Astro.props;
 ---
 
@@ -38,8 +47,9 @@ const {
     muted
     loop
     playsinline
-    preload="auto"
-    poster={`${posterBase}.jpg`}
+    preload={preload}
+    poster={`${posterBase}.webp`}
+    fetchpriority={fetchPriority}
     aria-hidden="true"
   >
     <source src={`${videoBase}-720p.webm`} type="video/webm" media="(max-width: 768px)" />
