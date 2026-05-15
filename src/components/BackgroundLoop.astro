@@ -58,6 +58,18 @@ const {
 
 <div class="bg-loop-layer" data-bg-section={sectionKey} style={style}>
   <div class="bg-loop-frame">
+    {/*
+      Poster goes FIRST in DOM order so it sits behind the video. It's
+      always visible — the painting that the user sees if the video
+      never starts (Safari blocks autoplay, reduced-motion, decode
+      stall, etc.). The video then fades in ON TOP once it's actually
+      playing.
+    */}
+    <picture class="bg-loop bg-loop--poster" aria-hidden="true">
+      <source srcset={`${posterBase}.webp`} type="image/webp" />
+      <img src={`${posterBase}.jpg`} alt="" />
+    </picture>
+
     <video
       class="bg-loop bg-loop--video"
       autoplay
@@ -68,50 +80,77 @@ const {
       poster={`${posterBase}.webp`}
       fetchpriority={fetchPriority}
       aria-hidden="true"
+      disablepictureinpicture
     >
       {/*
-        MP4 BEFORE WebM (PER-158). Safari's WebM decoder silently stalls on
-        some files — it claims canPlayType('video/webm') = "probably" then
-        fails to decode at runtime, and unlike a hard "can't play" it does
-        NOT fall back to the next <source>. The result on Safari desktop +
-        iOS is the autoplay-blocked control overlay sitting on top of the
-        painting forever. Browsers pick the first compatible source, so
-        listing MP4 first means Safari picks MP4 (decodes perfectly) and
-        Chrome also picks MP4 (decodes perfectly, slightly larger file
-        than the WebM we used to serve — acceptable trade-off for
-        cross-engine reliability).
+        MP4 before WebM (PER-158). Safari's WebM decoder silently stalls
+        on some files and does not fall back to the next <source>.
+        Listing MP4 first gives both engines a format they decode
+        reliably.
       */}
       <source src={`${videoBase}-720p.mp4`} type="video/mp4" media="(max-width: 768px)" />
       <source src={`${videoBase}-720p.webm`} type="video/webm" media="(max-width: 768px)" />
       <source src={`${videoBase}-1080p.mp4`} type="video/mp4" />
       <source src={`${videoBase}-1080p.webm`} type="video/webm" />
     </video>
-
-    <picture class="bg-loop bg-loop--poster" aria-hidden="true">
-      <source srcset={`${posterBase}.webp`} type="image/webp" />
-      <img src={`${posterBase}.jpg`} alt="" />
-    </picture>
   </div>
 </div>
 
 <script>
   /*
-   * Safari (macOS in particular) sometimes refuses to honour the declarative
-   * `autoplay` attribute on muted videos when the page wasn't activated by
-   * a user gesture, and then renders its "start playback" control overlay
-   * on top of the painting. Calling .play() explicitly forces the issue —
-   * if Safari permits autoplay it's a no-op; if it doesn't, this triggers
-   * the same blocked-autoplay path silently (returns a rejected promise)
-   * but the controls remain hidden by the CSS rules above.
+   * Poster-first strategy (PER-158).
+   *
+   * The <picture> poster is always rendered. The <video> starts at
+   * opacity: 0 and fades in only when its `playing` event fires —
+   * meaning the browser actually began decoding frames, not just that
+   * `.play()` returned a resolved promise.
+   *
+   * Why: Safari (desktop in particular) sometimes refuses muted
+   * autoplay despite the spec saying it should permit it — per-site
+   * preferences, window focus, or decode timing can all block it, and
+   * Safari then draws a "start playback" overlay on top of the video.
+   * Hiding that overlay via the WebKit media-controls pseudo-elements
+   * works in some Safari versions but Apple has progressively locked
+   * down those selectors. Setting opacity: 0 on the host <video>
+   * suppresses ALL its shadow-DOM content, controls included, because
+   * shadow-DOM elements inherit the host's opacity.
+   *
+   * Net result:
+   *   - Autoplay works → poster fades to video.
+   *   - Autoplay blocked → user sees the static poster painting and no
+   *     overlay. Acceptable degradation; the painting is the point.
+   *
+   * We also retry play() on the first user gesture in case Safari is
+   * waiting for one.
    */
-  document.querySelectorAll<HTMLVideoElement>('.bg-loop--video').forEach((video) => {
-    const promise = video.play();
-    if (promise && typeof promise.catch === 'function') {
-      promise.catch(() => {
-        // Autoplay blocked — poster fallback continues to show.
+  const videos = document.querySelectorAll<HTMLVideoElement>('.bg-loop--video');
+  if (
+    videos.length > 0 &&
+    !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  ) {
+    videos.forEach((video) => {
+      video.addEventListener('playing', () => {
+        video.dataset.playing = 'true';
       });
-    }
-  });
+      const tryPlay = () => {
+        const promise = video.play();
+        if (promise && typeof promise.catch === 'function') {
+          promise.catch(() => {
+            /* Autoplay blocked — poster stays visible. */
+          });
+        }
+      };
+      tryPlay();
+    });
+
+    // First-gesture fallback. If Safari blocked the initial play(), the
+    // first time the user interacts with the page we retry every video.
+    const retryAll = () => videos.forEach((v) => v.play().catch(() => {}));
+    const events = ['pointerdown', 'touchstart', 'keydown'] as const;
+    events.forEach((evt) => {
+      document.addEventListener(evt, retryAll, { once: true, passive: true });
+    });
+  }
 </script>
 
 <style>
@@ -221,12 +260,6 @@ const {
   .bg-loop--video {
     object-fit: cover;
     object-position: var(--bg-offset-x) var(--bg-offset-y);
-    /*
-     * The bg-loop-layer already has pointer-events: none, but Safari
-     * sometimes still shows a "start playback" overlay on muted-autoplay
-     * <video> elements when autoplay is blocked. Setting it explicitly
-     * here is belt-and-braces.
-     */
     pointer-events: none;
     /*
      * Crop the top and bottom edges of the video to hide ~1px dark rows
@@ -237,17 +270,27 @@ const {
      */
     clip-path: inset(4px 0 4px 0);
     transform: translateY(var(--bg-shift-y));
+    /*
+     * Starts invisible. The poster painting underneath fills in. Set to
+     * opacity: 1 only once the `playing` event has fired (JS toggles the
+     * data-playing attribute). This avoids two issues at once:
+     *   1. Safari's "blocked autoplay" overlay — the WebKit media controls
+     *      are inside the <video> element's shadow DOM and inherit the
+     *      host element's opacity, so opacity: 0 hides them too.
+     *   2. The brief gap between page load and the first decoded frame.
+     */
+    opacity: 0;
+    transition: opacity 400ms ease;
+  }
+
+  .bg-loop--video[data-playing='true'] {
+    opacity: 1;
   }
 
   /*
-   * WebKit media-control overlay killers. Safari (macOS and iOS) renders a
-   * "tap to play" overlay on <video> elements when it considers autoplay
-   * to have been blocked, even when the video is decorative and has no
-   * `controls` attribute. Hiding both the inline start-playback button
-   * and the centred overlay-play button removes the visible affordance.
-   * Paired with the explicit `.play()` call in <script> below — if Safari
-   * actually permits autoplay, the controls never show anyway; if it
-   * doesn't, JS forces the play and the controls remain hidden.
+   * Belt-and-braces: also try to hide Safari's media controls via the
+   * WebKit pseudo-elements. These work in some Safari versions but not
+   * all — opacity: 0 above is the durable solution.
    */
   .bg-loop--video::-webkit-media-controls-start-playback-button {
     display: none !important;
@@ -263,8 +306,13 @@ const {
     display: none !important;
   }
 
+  /*
+   * Poster: always visible. Sits behind the video and is what the user
+   * actually sees when autoplay fails (Safari blocked, reduced-motion,
+   * decode stall). When the video starts playing, it fades in on top.
+   */
   .bg-loop--poster {
-    display: none;
+    display: block;
   }
 
   .bg-loop--poster img {
@@ -280,10 +328,6 @@ const {
   @media (prefers-reduced-motion: reduce) {
     .bg-loop--video {
       display: none;
-    }
-
-    .bg-loop--poster {
-      display: block;
     }
   }
 </style>
