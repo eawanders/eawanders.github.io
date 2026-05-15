@@ -192,7 +192,22 @@ const {
     --bg-shift-y: 0px;
 
     position: fixed;
-    inset: 0;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    /*
+     * Use 100dvh (with 100vh fallback) for the layer height itself, NOT
+     * just for the inner frame. Reason: on iOS Safari, `position: fixed`
+     * with `inset: 0` pins the layer to the LAYOUT viewport — i.e. the
+     * full Safari viewport with the URL bar implicitly hidden — even
+     * though the visible area (visual viewport) is smaller. That left
+     * the inner frame's calc(100dvh - insets) sized inconsistently
+     * with its parent's actual rendered bounds, producing a cream gap
+     * above the URL bar on mobile. Sizing the layer to 100dvh directly
+     * keeps layer + frame + visible viewport all in agreement.
+     */
+    height: 100vh;
+    height: 100dvh;
     /*
      * z-index: 0 (not -1). On iOS Safari, position: fixed elements with a
      * negative z-index are rendered BEHIND the root canvas, hiding the
@@ -225,22 +240,13 @@ const {
    */
   .bg-loop-frame {
     position: absolute;
-    top: var(--inset-top);
-    left: var(--inset-left);
-    width: calc(100vw - var(--inset-left) - var(--inset-right));
     /*
-     * 100vh on iOS Safari is the LAYOUT viewport — i.e. the viewport with
-     * the URL bar implicitly hidden. With the URL bar visible (or with the
-     * bottom tab bar in newer iOS Safari), the visible area is smaller
-     * than 100vh, so a frame sized to `100vh - insets` ends up with its
-     * bottom edge sitting above the URL bar, leaving a cream gap.
-     *
-     * 100dvh tracks the DYNAMIC viewport — the actual visible area at any
-     * given moment, recalculating as the URL bar shows or hides. Fallback
-     * declaration first for very old browsers that don't know dvh.
+     * The frame fills the layer minus the four insets. Since the layer
+     * is now sized to 100vw × 100dvh, percentage insets here resolve
+     * against the visible viewport rather than the layout viewport.
+     * inset shorthand order: top right bottom left.
      */
-    height: calc(100vh - var(--inset-top) - var(--inset-bottom));
-    height: calc(100dvh - var(--inset-top) - var(--inset-bottom));
+    inset: var(--inset-top) var(--inset-right) var(--inset-bottom) var(--inset-left);
     overflow: hidden;
     -webkit-mask-image: radial-gradient(
       var(--vignette-shape) var(--vignette-size) at var(--vignette-cx) var(--vignette-cy),
@@ -264,13 +270,24 @@ const {
       --inset-top: 16px;
       --inset-right: 16px;
       /*
-       * Bottom inset matches the desktop default (-4px overflow that the
-       * .bg-loop--video clip-path crops). Gives a flush bottom edge on
-       * mobile rather than a 16px cream band above the URL bar.
+       * Negative bottom inset extends the frame slightly past the visible
+       * viewport on iOS Safari, so the painting goes flush to (and a bit
+       * behind) the URL bar rather than ending with a cream band above
+       * it. The clip-path on the video crops the overflow back cleanly.
        */
       --inset-bottom: -4px;
       --inset-left: 16px;
+      /*
+       * On mobile (portrait box) the vignette fades over a shorter
+       * pixel distance than on desktop, which can read as a hard line.
+       * A larger edge stretches the transition out so the fade is
+       * perceptually smoother. `!important` is needed because the
+       * per-section inline styles in index.astro (heroBgStyle,
+       * contactBgStyle, projectsBgStyle) explicitly set
+       * --vignette-edge: 50%, and inline styles otherwise beat @media.
+       */
       --vignette-core: 40%;
+      --vignette-edge: 80% !important;
     }
   }
 
