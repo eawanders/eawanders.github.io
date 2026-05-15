@@ -69,10 +69,22 @@ const {
       fetchpriority={fetchPriority}
       aria-hidden="true"
     >
-      <source src={`${videoBase}-720p.webm`} type="video/webm" media="(max-width: 768px)" />
+      {/*
+        MP4 BEFORE WebM (PER-158). Safari's WebM decoder silently stalls on
+        some files — it claims canPlayType('video/webm') = "probably" then
+        fails to decode at runtime, and unlike a hard "can't play" it does
+        NOT fall back to the next <source>. The result on Safari desktop +
+        iOS is the autoplay-blocked control overlay sitting on top of the
+        painting forever. Browsers pick the first compatible source, so
+        listing MP4 first means Safari picks MP4 (decodes perfectly) and
+        Chrome also picks MP4 (decodes perfectly, slightly larger file
+        than the WebM we used to serve — acceptable trade-off for
+        cross-engine reliability).
+      */}
       <source src={`${videoBase}-720p.mp4`} type="video/mp4" media="(max-width: 768px)" />
-      <source src={`${videoBase}-1080p.webm`} type="video/webm" />
+      <source src={`${videoBase}-720p.webm`} type="video/webm" media="(max-width: 768px)" />
       <source src={`${videoBase}-1080p.mp4`} type="video/mp4" />
+      <source src={`${videoBase}-1080p.webm`} type="video/webm" />
     </video>
 
     <picture class="bg-loop bg-loop--poster" aria-hidden="true">
