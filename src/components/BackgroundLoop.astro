@@ -3,7 +3,23 @@
 // Reusable per-section background (PER-144): each instance is wrapped in a
 // .bg-loop-layer container so it can be opacity-faded independently as the
 // user scrolls. Vignette/inset/offset variables live on the wrapper and the
-// inner video + poster siblings inherit them.
+// inner .bg-loop-frame (which carries the mask) reads them.
+//
+// PER-158 refactor: the mask used to be applied directly to the <video> and
+// <picture> elements, as four comma-separated gradient layers composited
+// with intersect. Two well-documented WebKit issues broke this on Safari
+// (desktop + iOS) and Chrome-on-iOS (which is WebKit under the hood):
+//   1. Masking a <video> directly is unreliable — video paints through a
+//      separate GPU compositor pass that WebKit doesn't consistently merge
+//      with CSS masks. Applying the mask to a regular wrapping <div> is
+//      reliable across all engines.
+//   2. Three of the four mask layers degenerated to identical 0% stops
+//      (the --clear-left/top/bottom defaults are 0% and no section
+//      overrides them). Chromium tolerates "two stops at the same offset"
+//      as fully opaque; WebKit resolves the bottom layer as fully
+//      transparent, which intersected the entire painting to invisible.
+// Fixed by moving the mask to .bg-loop-frame and collapsing to a single
+// radial-vignette gradient. The clear-* knobs are gone — they were unused.
 //
 // Props:
 //   sectionKey  String. Used as `data-bg-section` for cross-fade scripts to
@@ -25,8 +41,8 @@ interface Props {
   // off-screen sections don't tax the initial page load — the hero passes
   // `"auto"` explicitly. (PER-156 perf pass.)
   preload?: 'none' | 'metadata' | 'auto';
-  // Forwarded to the `<video>` and poster `<img>`. Hero passes "high" so
-  // the LCP-candidate poster is fetched ahead of off-screen assets.
+  // Forwarded to the `<video>`. Hero passes "high" so the LCP-candidate
+  // poster is fetched ahead of off-screen assets.
   fetchPriority?: 'high' | 'low' | 'auto';
 }
 
@@ -41,27 +57,29 @@ const {
 ---
 
 <div class="bg-loop-layer" data-bg-section={sectionKey} style={style}>
-  <video
-    class="bg-loop bg-loop--video"
-    autoplay
-    muted
-    loop
-    playsinline
-    preload={preload}
-    poster={`${posterBase}.webp`}
-    fetchpriority={fetchPriority}
-    aria-hidden="true"
-  >
-    <source src={`${videoBase}-720p.webm`} type="video/webm" media="(max-width: 768px)" />
-    <source src={`${videoBase}-720p.mp4`} type="video/mp4" media="(max-width: 768px)" />
-    <source src={`${videoBase}-1080p.webm`} type="video/webm" />
-    <source src={`${videoBase}-1080p.mp4`} type="video/mp4" />
-  </video>
+  <div class="bg-loop-frame">
+    <video
+      class="bg-loop bg-loop--video"
+      autoplay
+      muted
+      loop
+      playsinline
+      preload={preload}
+      poster={`${posterBase}.webp`}
+      fetchpriority={fetchPriority}
+      aria-hidden="true"
+    >
+      <source src={`${videoBase}-720p.webm`} type="video/webm" media="(max-width: 768px)" />
+      <source src={`${videoBase}-720p.mp4`} type="video/mp4" media="(max-width: 768px)" />
+      <source src={`${videoBase}-1080p.webm`} type="video/webm" />
+      <source src={`${videoBase}-1080p.mp4`} type="video/mp4" />
+    </video>
 
-  <picture class="bg-loop bg-loop--poster" aria-hidden="true">
-    <source srcset={`${posterBase}.webp`} type="image/webp" />
-    <img src={`${posterBase}.jpg`} alt="" />
-  </picture>
+    <picture class="bg-loop bg-loop--poster" aria-hidden="true">
+      <source srcset={`${posterBase}.webp`} type="image/webp" />
+      <img src={`${posterBase}.jpg`} alt="" />
+    </picture>
+  </div>
 </div>
 
 <style>
@@ -90,19 +108,6 @@ const {
     --vignette-cy: 50%;
     --vignette-stops: black 0%, black var(--vignette-core), transparent var(--vignette-edge);
 
-    --clear-left: 0%;
-    --clear-top: 0%;
-    --clear-top-right: 100%;
-
-    /*
-     * --clear-bottom  vertical reach (%) of a soft bottom fade. 0 = no
-     *                 effect; larger values fade more of the bottom of the
-     *                 box to transparent. Uses a linear gradient so the
-     *                 fade is wider and softer than the corner-anchored
-     *                 ellipses above.
-     */
-    --clear-bottom: 0%;
-
     --bg-offset-x: 100%;
     --bg-offset-y: 0%;
 
@@ -130,62 +135,45 @@ const {
   }
 
   /*
-   * Vignette controls (mirrored from previous BackgroundLoop comment block):
+   * Vignette controls:
    *   --vignette-shape   ellipse | circle
    *   --vignette-size    extent keyword OR explicit "rx ry" lengths
    *   --vignette-cx/cy   centre of the gradient in % of the box
    *   --vignette-stops   gradient colour stops — override for non-linear fades
-   *   --vignette-core    used by default --vignette-stops; opaque-region radius
-   *   --vignette-edge    used by default --vignette-stops; transparent radius
-   *
-   *   --clear-left       extra horizontal clear band on the left edge (%)
-   *   --clear-top        vertical reach of corner-anchored top clear (%)
-   *   --clear-top-right  horizontal reach of the top clear (%)
-   *
-   *   --bg-offset-x/y    object-position for the painting inside the box
+   *   --vignette-core    opaque-region radius (% along the gradient line)
+   *   --vignette-edge    transparent radius (% along the gradient line)
+   *   --bg-offset-x/y    object-position for the painting inside the frame
+   *   --bg-shift-y       additional translateY applied to the painting
    */
 
-  .bg-loop {
+  /*
+   * The frame carries the mask AND the sizing. Children (video + poster)
+   * fill it and inherit visibility from the mask. WebKit renders this
+   * correctly because the mask is on a plain block element, not on the
+   * <video> element directly.
+   */
+  .bg-loop-frame {
     position: absolute;
     top: var(--inset-top);
     left: var(--inset-left);
     width: calc(100vw - var(--inset-left) - var(--inset-right));
     height: calc(100vh - var(--inset-top) - var(--inset-bottom));
+    overflow: hidden;
+    -webkit-mask-image: radial-gradient(
+      var(--vignette-shape) var(--vignette-size) at var(--vignette-cx) var(--vignette-cy),
+      var(--vignette-stops)
+    );
+    mask-image: radial-gradient(
+      var(--vignette-shape) var(--vignette-size) at var(--vignette-cx) var(--vignette-cy),
+      var(--vignette-stops)
+    );
+  }
 
-    /*
-     * Four-layer mask, composited with intersection:
-     *   1. Radial vignette (overall elliptical fade)
-     *   2. Left clear band (extra fade on the left edge)
-     *   3. Top clear band (extra fade on the top edge)
-     *   4. Bottom clear band (extra soft fade on the bottom edge)
-     * Anywhere any layer is transparent, the final is transparent.
-     */
-    -webkit-mask-image:
-      radial-gradient(
-        var(--vignette-shape) var(--vignette-size) at var(--vignette-cx) var(--vignette-cy),
-        var(--vignette-stops)
-      ),
-      linear-gradient(to right, transparent 0%, black var(--clear-left), black 100%),
-      radial-gradient(
-        ellipse var(--clear-top-right) var(--clear-top) at 0% 0%,
-        transparent 0%,
-        black 100%
-      ),
-      linear-gradient(to top, transparent 0%, black var(--clear-bottom));
-    -webkit-mask-composite: source-in;
-    mask-image:
-      radial-gradient(
-        var(--vignette-shape) var(--vignette-size) at var(--vignette-cx) var(--vignette-cy),
-        var(--vignette-stops)
-      ),
-      linear-gradient(to right, transparent 0%, black var(--clear-left), black 100%),
-      radial-gradient(
-        ellipse var(--clear-top-right) var(--clear-top) at 0% 0%,
-        transparent 0%,
-        black 100%
-      ),
-      linear-gradient(to top, transparent 0%, black var(--clear-bottom));
-    mask-composite: intersect;
+  .bg-loop {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
   }
 
   @media (max-width: 768px) {
