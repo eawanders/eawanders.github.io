@@ -165,8 +165,14 @@ const contactBgStyle = [
   '--vignette-size: 400% 65%',
   '--vignette-cx: 50%',
   '--vignette-cy: 35%',
-  '--vignette-core: 5%',
-  '--vignette-edge: 50%',
+  // PER-158: override --vignette-stops with an explicit S-curve.
+  // The default two-stop fall-off (`black 0%, black 5%, transparent 50%`)
+  // produces a perceptually hard transition on the contact section's
+  // top edge — the gradient passes through the eye's "just visible"
+  // threshold over too few pixels. Adding intermediate stops spreads
+  // the low-opacity region out so the cream→painting transition reads
+  // as a gradient instead of a line.
+  '--vignette-stops: black 0%, black 5%, rgba(0, 0, 0, 0.88) 14%, rgba(0, 0, 0, 0.65) 22%, rgba(0, 0, 0, 0.38) 30%, rgba(0, 0, 0, 0.18) 38%, rgba(0, 0, 0, 0.08) 44%, rgba(0, 0, 0, 0.03) 47%, transparent 50%',
   '--bg-offset-x: 50%',
   '--bg-offset-y: 100%',
   '--bg-shift-y: 80px',
