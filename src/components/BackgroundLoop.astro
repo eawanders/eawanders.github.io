@@ -277,17 +277,7 @@ const {
        */
       --inset-bottom: -4px;
       --inset-left: 16px;
-      /*
-       * On mobile (portrait box) the vignette fades over a shorter
-       * pixel distance than on desktop, which can read as a hard line.
-       * A larger edge stretches the transition out so the fade is
-       * perceptually smoother. `!important` is needed because the
-       * per-section inline styles in index.astro (heroBgStyle,
-       * contactBgStyle, projectsBgStyle) explicitly set
-       * --vignette-edge: 50%, and inline styles otherwise beat @media.
-       */
       --vignette-core: 40%;
-      --vignette-edge: 80% !important;
     }
   }
 
